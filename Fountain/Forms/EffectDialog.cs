@@ -74,6 +74,7 @@ namespace Fountain.Forms
 			script.RequiredTypes.Add(typeof(HeightField));
 			script.RequiredTypes.Add(typeof(Photon));
 			script.RequiredTypes.Add(typeof(Numerics));
+			script.RequiredTypes.Add(typeof(Math));
 			script.Source = scriptBox.Text;
 
 			string errors;
