@@ -17,8 +17,11 @@ Adding any of these four elements to a document is easy - click the appropriate 
 ##2: Scripting
 Renders and gradients are simple enough but things get trickier when dealing in brushes and effects. This is because there is no default implementation for brushes or effects in Fountain; you need to write your own or use someone elses.
 
-###Sample Brushes
+###Brushes
+Brushes are integral if you want to do any painting in Fountain. Their scripts consist of two parts; the 'Sample' function, and the 'Blend' function. The 'Sample' function defines the shape of your brush, while the 'Blend' function denotes how the shape is blended into the area you are painting.
+
 Soft, circular brushes are a caste favourite in image manipulation - they're incredibly useful. Here's a really basic one in script form:
+
 ```
 float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
 {
@@ -34,5 +37,24 @@ float Blend(float baseValue, float newValue)
 	return baseValue + newValue;
 }
 ```
-##3: Painting
-When painting you are equipped with two brushes; left and right. These two brushes correspond to your left and right mouse buttons respectively.
+
+Smoothing brushes attempt to even out an area. The one listed below tries to level the area it affects, sinking high areas and raising low ones:
+
+```
+float smoothTarget = 0.5f;
+
+float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
+{
+	float u = (float)(x - left) / (right - left) * 2.0f - 1.0f;
+	float v = (float)(y - top) / (bottom - top) * 2.0f - 1.0f;
+	float d = 1.0f - (float)Math.Sqrt(u * u + v * v);
+	if (d < 0)
+		d = 0f;
+	return d * intensity;
+}
+float Blend(float baseValue, float newValue)
+{
+	float delta = smoothTarget - baseValue;
+	return baseValue + delta * newValue;
+}
+```
