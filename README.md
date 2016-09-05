@@ -19,7 +19,7 @@ Renders and gradients are simple enough but things get trickier when dealing in 
 
 ###Sample Brushes
 Soft, circular brushes are a caste favourite in image manipulation - they're incredibly useful. Here's a really basic one in script form:
-
+```
 float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
 {
 	float u = (float)(x - left) / (right - left) * 2.0f - 1.0f;
@@ -33,6 +33,6 @@ float Blend(float baseValue, float newValue)
 {
 	return baseValue + newValue;
 }
-
+```
 ##3: Painting
 When painting you are equipped with two brushes; left and right. These two brushes correspond to your left and right mouse buttons respectively.
