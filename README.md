@@ -22,6 +22,8 @@ Renders are subject to both Gradients and Effects. Gradients determine how the h
 ##3: Scripting
 Renders and gradients are simple enough but things get trickier when dealing in brushes and effects. This is because there is no default implementation for brushes or effects in Fountain; you need to write your own or use someone elses.
 
+The actual scripting component of Fountain is performed in a language called C#, and it's actually not as troublesome as it might appear. Your scripts can include anything (including classes, structs, global variables, enumerated types and other functions) but principally they will only consist of a function or two, depending on what you're scripting.
+
 ###Brushes
 Brushes are integral if you want to do any painting in Fountain. Their scripts consist of two parts; the 'Sample' function, and the 'Blend' function. The 'Sample' function defines the shape of your brush, while the 'Blend' function denotes how the shape is blended into the area you are painting.
 
@@ -61,5 +63,25 @@ float Blend(float baseValue, float newValue)
 {
 	float delta = smoothTarget - baseValue;
 	return baseValue + delta * newValue;
+}
+```
+
+The next sample brush is useful for adding random detail to your renders. It acts like a smooth circular brush for the most part, but it also adds a random value to every sample point to add fine detail.
+
+```
+Random r = new Random(0);
+float jitter = 0.03f;
+
+float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
+{
+	float u = (float)(x - left) / (right - left) * 2.0f - 1.0f;
+	float v = (float)(y - top) / (bottom - top) * 2.0f - 1.0f;
+	float d = 1.0f - (float)Math.Sqrt(u * u + v * v);
+	if (d < 0) d = 0f;
+	return d * intensity + (jitter / 2 - (float)r.NextDouble() * jitter) * d;
+}
+float Blend(float baseValue, float newValue)
+{
+	return baseValue + newValue;
 }
 ```
