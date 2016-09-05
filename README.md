@@ -17,5 +17,22 @@ Adding any of these four elements to a document is easy - click the appropriate 
 ##2: Scripting
 Renders and gradients are simple enough but things get trickier when dealing in brushes and effects. This is because there is no default implementation for brushes or effects in Fountain; you need to write your own or use someone elses.
 
+###Sample Brushes
+Soft, circular brushes are a caste favourite in image manipulation - they're incredibly useful. Here's a really basic one in script form:
+
+float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
+{
+	float u = (float)(x - left) / (right - left) * 2.0f - 1.0f;
+	float v = (float)(y - top) / (bottom - top) * 2.0f - 1.0f;
+	float d = 1.0f - (float)Math.Sqrt(u * u + v * v);
+	if (d < 0)
+		d = 0f;
+	return d * intensity;
+}
+float Blend(float baseValue, float newValue)
+{
+	return baseValue + newValue;
+}
+
 ##3: Painting
 When painting you are equipped with two brushes; left and right. These two brushes correspond to your left and right mouse buttons respectively.
