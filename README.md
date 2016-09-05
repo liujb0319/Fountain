@@ -14,7 +14,12 @@ A Fountain document contains renders, brushes, effects and gradients. When you s
 
 Adding any of these four elements to a document is easy - click the appropriate tab, then type a name for the item into the combo box. Once you're happy with the name, hit enter to create a new render, brush, effect or gradient and add it to the document. A window will appear allowing you to alter the attributes of the item - this window can always be re-opened by clicking the appropriate 'Edit' option later in the same tab.
 
-##2: Scripting
+##2: Renders
+Renders are the images and accompanying heightmaps that constitute the goal and output of the entire program. When adding a render to a document, consider what attributes might be appropriate for it. If the render is to be a world map then consider selecting horizontal (x-axis) wrapping so that you can paint accross the edge of the map and have the result wrap back to the other side.
+
+Renders are subject to both Gradients and Effects. Gradients determine how the heightmaps are colorized, while Effects alter the appearance of a Render even further. If no Gradients are supplied, the render will simply appear in grayscale.
+
+##3: Scripting
 Renders and gradients are simple enough but things get trickier when dealing in brushes and effects. This is because there is no default implementation for brushes or effects in Fountain; you need to write your own or use someone elses.
 
 ###Brushes
