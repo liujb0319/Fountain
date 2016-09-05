@@ -134,6 +134,6 @@ namespace Fountain.Media
 			else throw new Exception("The supplied region did not lie within the height render.");
 		}
 
-		public delegate float[] Effect(int x, int y, float[] color, dynamic heightField);
+		public delegate Photon Effect(int x, int y, Photon color, HeightField heightField);
 	}
 }

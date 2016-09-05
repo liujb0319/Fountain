@@ -91,7 +91,11 @@ namespace Fountain.Forms
 		}
 		private void compileButton_Click(object sender, EventArgs e)
 		{
+			script.References.Clear();
+			script.References.Add(Assembly.LoadFrom("LlewellynMath.dll"));
+			script.References.Add(Assembly.LoadFrom("LlewellynMedia.dll"));
 			script.source = scriptBox.Text;
+
 			string errors;
 			if (script.Compile(out errors))
 			{
