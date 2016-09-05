@@ -775,7 +775,7 @@ namespace Fountain
 		private static EffectScript LoadEffect(Stream stream)
 		{
 			EffectScript es = new EffectScript() { effect = null, script = new CSScript() };
-			es.script.source = LoadText(stream);
+			es.script.Source = LoadText(stream);
 			return es;
 		}
 		private static BrushScript LoadBrush(Stream stream)
@@ -792,7 +792,7 @@ namespace Fountain
 			int precision = BitConverter.ToInt32(buffer, 0);
 
 			BrushScript bs = new BrushScript() { brush = new HeightBrush(width, height, power, precision), script = new CSScript() };
-			bs.script.source = LoadText(stream);
+			bs.script.Source = LoadText(stream);
 
 			return bs;
 		}
@@ -887,7 +887,7 @@ namespace Fountain
 		}
 		private static void SaveEffect(Stream stream, EffectScript effect)
 		{
-			SaveText(stream, effect.script.source);
+			SaveText(stream, effect.script.Source);
 		}
 		private static void SaveBrush(Stream stream, BrushScript brush)
 		{
@@ -895,7 +895,7 @@ namespace Fountain
 			stream.Write(BitConverter.GetBytes(brush.brush.Height), 0, sizeof(int));
 			stream.Write(BitConverter.GetBytes(brush.brush.Power), 0, sizeof(float));
 			stream.Write(BitConverter.GetBytes(brush.brush.Precision), 0, sizeof(int));
-			SaveText(stream, brush.script.source);
+			SaveText(stream, brush.script.Source);
 		}
 
 		public delegate void OnCleared();

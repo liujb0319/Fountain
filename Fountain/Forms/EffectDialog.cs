@@ -26,6 +26,8 @@ using System.Windows.Forms;
 using System.Reflection;
 
 using LlewellynScripting;
+using LlewellynMath;
+using LlewellynMedia;
 
 using Fountain.Media;
 
@@ -44,7 +46,7 @@ namespace Fountain.Forms
 				script = Document.GetEffectScript(effectName);
 
 				Text = "Effect - " + effectName;
-				scriptBox.Text = script.source;
+				scriptBox.Text = script.Source;
 
 				Document.Cleared += Document_Cleared;
 				Document.Loaded += Document_Loaded;
@@ -68,10 +70,11 @@ namespace Fountain.Forms
 
 		private void compileButton_Click(object sender, EventArgs e)
 		{
-			script.References.Clear();
-			script.References.Add(Assembly.LoadFrom("LlewellynMath.dll"));
-			script.References.Add(Assembly.LoadFrom("LlewellynMedia.dll"));
-			script.source = scriptBox.Text;
+			script.RequiredTypes.Add(typeof(Color));
+			script.RequiredTypes.Add(typeof(HeightField));
+			script.RequiredTypes.Add(typeof(Photon));
+			script.RequiredTypes.Add(typeof(Numerics));
+			script.Source = scriptBox.Text;
 
 			string errors;
 			if (script.Compile(out errors))
@@ -83,8 +86,6 @@ namespace Fountain.Forms
 					{
 						HeightRender.Effect effect = (HeightRender.Effect)applyInfo.CreateDelegate(typeof(HeightRender.Effect), script.ScriptObject);
 						Document.SetEffect(effectName, effect);
-
-						if (Document.GetEffect(effectName) == null) throw new Exception("FUCK");
 					}
 					catch
 					{

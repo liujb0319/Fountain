@@ -26,6 +26,8 @@ using System.Windows.Forms;
 using System.Reflection;
 
 using LlewellynScripting;
+using LlewellynMath;
+using LlewellynMedia;
 
 using Fountain.Media;
 
@@ -51,7 +53,7 @@ namespace Fountain.Forms
 				heightBox.Value = brush.Height;
 				powerBox.Value = (decimal)brush.Power;
 				precisionBox.Value = brush.Precision;
-				scriptBox.Text = script.source;
+				scriptBox.Text = script.Source;
 
 				Document.BrushRemoved += FountainDocument_BrushRemoved;
 				Document.Loaded += FountainDocument_Loaded;
@@ -91,10 +93,9 @@ namespace Fountain.Forms
 		}
 		private void compileButton_Click(object sender, EventArgs e)
 		{
-			script.References.Clear();
-			script.References.Add(Assembly.LoadFrom("LlewellynMath.dll"));
-			script.References.Add(Assembly.LoadFrom("LlewellynMedia.dll"));
-			script.source = scriptBox.Text;
+			script.RequiredTypes.Add(typeof(Math));
+			script.RequiredTypes.Add(typeof(Numerics));
+			script.Source = scriptBox.Text;
 
 			string errors;
 			if (script.Compile(out errors))
