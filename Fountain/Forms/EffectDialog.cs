@@ -27,6 +27,7 @@ using System.Reflection;
 
 using LlewellynScripting;
 using LlewellynMath;
+using LlewellynMath.NoiseGenerators;
 using LlewellynMedia;
 
 using Fountain.Media;
@@ -75,6 +76,7 @@ namespace Fountain.Forms
 			script.RequiredTypes.Add(typeof(Photon));
 			script.RequiredTypes.Add(typeof(Numerics));
 			script.RequiredTypes.Add(typeof(Math));
+			script.RequiredTypes.Add(typeof(PerlinNoise));
 			script.Source = scriptBox.Text;
 
 			string errors;
