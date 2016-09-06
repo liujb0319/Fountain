@@ -27,7 +27,7 @@ The actual scripting component of Fountain is performed in a language called C#,
 ###Brushes
 Brushes are integral if you want to do any painting in Fountain. Their scripts consist of two parts; the 'Sample' function, and the 'Blend' function. The 'Sample' function defines the shape of your brush, while the 'Blend' function denotes how the shape is blended into the area you are painting.
 
-Soft, circular brushes are a caste favourite in image manipulation - they're incredibly useful. Here's a really basic one in script form:
+Soft, circular brushes are a caste favourite in image manipulation - they're incredibly useful. Essentially what this script is doing is determining how far the current point (at the coordinates of 'x' and 'y') is from the center of the brush area (halfway between 'top' 'left' and 'bottom' 'right').
 
 ```
 float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
@@ -109,6 +109,17 @@ float Blend(float baseValue, float newValue)
 ###Effects
 Effects are functions that are laid over the render when it updates. They can be really simple or really tricky, but the couple of following examples should demonstrate them relatively clearly.
 
+The most basic effects will be things like overlays that simply change the color of the render. The following effect script tints the entire render red:
+
+```
+Photon tintColor = new Photon(1.0f, 0.0f, 0.0f, 1.0f);
+
+Photon Apply(int x, int y, Photon color, HeightField heightField)
+{
+	return Photon.InterpolateLinear(color, tintColor, 0.2f);
+}
+```
+
 Shadowing is a really nice thing to have because it adds depth to your maps. All this script does is compare the height of the current sample point to the height of the sample point above it and to the left. If the upper point is higher, it applies a shadow. If the upper point is lower, it applies lighting.
 
 ```
@@ -142,7 +153,7 @@ float contrast = 0.4f;
 int stepCount = 10;
 float cutOff = 0.5f;
 
-public Photon Apply(int x, int y, Photon color, HeightField heightField)
+Photon Apply(int x, int y, Photon color, HeightField heightField)
 {
 	float sample;
 	if (heightField.TryGetHeight(x, y, out sample) && sample >= cutOff)
@@ -160,7 +171,7 @@ public Photon Apply(int x, int y, Photon color, HeightField heightField)
 	}
 	return color;
 }
-public float RemoveCutOff(float sample)
+float RemoveCutOff(float sample)
 {
 	return (sample - cutOff) / (1 - cutOff);
 }
