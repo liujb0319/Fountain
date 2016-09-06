@@ -105,3 +105,32 @@ float Blend(float baseValue, float newValue)
 	return baseValue + newValue;
 }
 ```
+
+###Effects
+Effects are functions that are laid over the render when it updates. They can be really simple or really tricky, but the couple of following examples should demonstrate them relatively clearly.
+
+Shadowing is a really nice thing to have because it adds depth to your maps.
+
+```
+float contrast = 3;
+float cutOff = 0.5f;
+Photon lightColor = new Photon(1.0f, 0.8f, 0.7f, 1.0f);
+Photon shadowColor = new Photon(0.0f, 0.2f, 0.3f, 1.0f);
+
+Photon Apply(int x, int y, Photon color, HeightField heightField)
+{
+	float sample;
+	float upper;
+	if (heightField.TryGetHeight(x, y, out sample) & sample >= cutOff & heightField.TryGetHeight(x - 1, y - 1, out upper))
+	{
+		float t = (RemoveCutOff(upper) - RemoveCutOff(sample)) * contrast;
+		if (t >= 0) return Photon.InterpolateLinear(color, shadowColor, t);
+		else return Photon.InterpolateLinear(color, lightColor, -t);
+	}
+	else return color;
+}
+public float RemoveCutOff(float sample)
+{
+	return (sample - cutOff) / (1 - cutOff);
+}
+```
