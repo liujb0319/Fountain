@@ -24,6 +24,8 @@ Renders and gradients are simple enough but things get trickier when dealing in 
 
 The actual scripting component of Fountain is performed in a language called C#, and it's actually not as troublesome as it might appear. Your scripts can include anything (including classes, structs, global variables, enumerated types and other functions) but principally they will only consist of a function or two, depending on what you're scripting.
 
+In Fountain's scripting you have access to a couple of helper APIs that I've written. They mostly deal with annoying math functionality and the like.
+
 ###Brushes
 Brushes are integral if you want to do any painting in Fountain. Their scripts consist of two parts; the 'Sample' function, and the 'Blend' function. The 'Sample' function defines the shape of your brush, while the 'Blend' function denotes how the shape is blended into the area you are painting.
 
