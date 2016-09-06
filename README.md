@@ -109,7 +109,7 @@ float Blend(float baseValue, float newValue)
 ###Effects
 Effects are functions that are laid over the render when it updates. They can be really simple or really tricky, but the couple of following examples should demonstrate them relatively clearly.
 
-Shadowing is a really nice thing to have because it adds depth to your maps.
+Shadowing is a really nice thing to have because it adds depth to your maps. All this script does is compare the height of the current sample point to the height of the sample point above it and to the left. If the upper point is higher, it applies a shadow. If the upper point is lower, it applies lighting.
 
 ```
 float contrast = 3;
@@ -128,6 +128,37 @@ Photon Apply(int x, int y, Photon color, HeightField heightField)
 		else return Photon.InterpolateLinear(color, lightColor, -t);
 	}
 	else return color;
+}
+public float RemoveCutOff(float sample)
+{
+	return (sample - cutOff) / (1 - cutOff);
+}
+```
+
+Contouring is also a nice thing to have when painting maps - it gives you a sense of scale. The following script is a bit trickier to follow, but essentially it's breaking the height value down into a given number of levels, and checking to see whether any of the surrounding heights are a level below the current one. If one of them is; then the current sample point rest on the border between those levels and needs to be highlighted as a contour.
+
+```
+float contrast = 0.4f;
+int stepCount = 10;
+float cutOff = 0.5f;
+
+public Photon Apply(int x, int y, Photon color, HeightField heightField)
+{
+	float sample;
+	if (heightField.TryGetHeight(x, y, out sample) && sample >= cutOff)
+	{
+		float thresshold = (float)Math.Floor(RemoveCutOff(sample) * stepCount) / stepCount;
+		
+		if (heightField.TryGetHeight(x - 1, y, out sample) && RemoveCutOff(sample) < thresshold)
+			color *= contrast;
+		else if (heightField.TryGetHeight(x + 1, y, out sample) && RemoveCutOff(sample) < thresshold)
+			color *= contrast;
+		else if (heightField.TryGetHeight(x, y + 1, out sample) && RemoveCutOff(sample) < thresshold)
+			color *= contrast;
+		else if (heightField.TryGetHeight(x, y - 1, out sample) && RemoveCutOff(sample) < thresshold)
+			color *= contrast;
+	}
+	return color;
 }
 public float RemoveCutOff(float sample)
 {
