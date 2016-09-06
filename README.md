@@ -85,3 +85,23 @@ float Blend(float baseValue, float newValue)
 	return baseValue + newValue;
 }
 ```
+
+Finally; the most useful brush: The noise brush. These brushes use a noise field to generate random strokes. They add an element of chaos to your coastlines and terrain, making them look more organic.
+
+```
+NoiseGenerator gen = new PerlinNoise(0, 4, 20, 2, 0.5f);
+
+float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
+{
+	float u = (float)(x - left) / (right - left) * 2.0f - 1.0f;
+	float v = (float)(y - top) / (bottom - top) * 2.0f - 1.0f;
+	float d = 1.0f - (float)Math.Sqrt(u * u + v * v);
+	if (d < 0)
+		d = 0f;
+	return d * intensity * gen.Sample(x, y);
+}
+float Blend(float baseValue, float newValue)
+{
+	return baseValue + newValue;
+}
+```
