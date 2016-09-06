@@ -219,12 +219,43 @@ else
 or like this:
 
 ```
-if (heightRender.TrySetValue(10, 8, 100.3f))
+if (heightField.TrySetValue(10, 8, 100.3f))
 {
-	//Your location lay within the field and the value is now equal to _100.3_ (subject to clamping, if the field is set to clamp values).
+	//Your location lay within the field and the value is now equal to 100.3 (subject to clamping, if the field is set to clamp values).
 }
 else
 {
 	//Your location lay outside the field and nothing in the field was changed.
 }
+```
+
+###Photon
+Photons are a simple little structures that denote colors. They contain a value each for _red_, _green_, _blue_ and _transparency_.
+
+Photons can be made by doing the following:
+
+```
+Photon white = new Photon(1.0f, 1.0f, 1.0f, 1.0f);
+Photon red = new Photon(1.0f, 0.0f, 0.0f, 1.0f);
+Photon yellow = new Photon(1.0f, 1.0f, 0.0f, 1.0f);
+Photon transparent = new Photon(0.0f, 0.0f, 0.0f, 0.0f);
+```
+
+They can be added together (so adding _red_ to _blue_ will yield a Photon that denotes purple), multiplied together (color burn), multiplied by a number (increasing or decreasing brightness) and subtracted from one-another:
+
+```
+Photon red = new Photon(1.0f, 0.0f, 0.0f, 1.0f);
+Photon blue = new Photon(0.0f, 0.0f, 1.0f, 1.0f);
+Photon purple = red + blue;
+Photon black = red * blue; //Because the parts will be multiplied together; meaning they will all end up being zero.
+```
+
+They can also be interpolated between using _Photon.InterpolateCubic_ and _Photon.InterpolateLinear_ like so:
+
+```
+Photon black = new Photon(0.0f, 0.0f, 0.0f, 1.0f);
+Photon white = new Photon(1.0f, 1.0f, 1.0f, 1.0f);
+Photon darkGray = Photon.InterpolateLinear(black, white, 0.2f);
+Photon gray = Photon.InterpolateLinear(black, white, 0.5f);
+Photon lightGray = Photon.InterpolateLinear(black, white, 0.8f);
 ```
