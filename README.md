@@ -268,7 +268,7 @@ There are a few kinds of built-in noise generator. They are notably:
 * PerlinNoise - Plain perlin noise.
 * OffsetNoise - Noise that is sampled from an offset position (slow but high quality).
 * RidgedMultifractalNoise - Noise that has lots of ridges.
-* DifferenceNoisew - Noise that can contain high detail and defining features.
+* DifferenceNoise - Noise that can contain high detail and defining features.
 
 To create and use one, just do the following:
 
