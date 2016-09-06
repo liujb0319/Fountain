@@ -230,7 +230,7 @@ else
 ```
 
 ###Photon
-Photons are a simple little structures that denote colors. They contain a value each for _red_, _green_, _blue_ and _transparency_.
+Photons are a simple little structures that denote colors. They contain a value each for _red_, _green_, _blue_ and _transparency_. They are predominantly used in effect scripting.
 
 Photons can be made by doing the following:
 
@@ -259,3 +259,54 @@ Photon darkGray = Photon.InterpolateLinear(black, white, 0.2f);
 Photon gray = Photon.InterpolateLinear(black, white, 0.5f);
 Photon lightGray = Photon.InterpolateLinear(black, white, 0.8f);
 ```
+
+###Noise Generators
+Noise generators can be utilized in both effect and brush scripting and provide you with an avenue for creating organic topographical features and effects.
+
+There are a few kinds of built-in noise generator. They are notably:
+
+* PerlinNoise - Plain perlin noise.
+* OffsetNoise - Noise that is sampled from an offset position (slow but high quality).
+* RidgedMultifractalNoise - Noise that has lots of ridges.
+* DifferenceNoisew - Noise that can contain high detail and defining features.
+
+To create and use one, just do the following:
+
+```
+//Creates a perlin noise generator with a seed of 0, 4 octaves,
+//a frequency of 0.1, a lacunarity of 2.0 and a persistence of 0.5
+NoiseGenerator gen = new PerlinNoise(0, 4, 0.1f, 2.0f, 0.5f);
+//Samples the point x = 10, y = 20 in 2D space.
+//You can do this in 1 and 3 dimensions as well if you need to.
+float sample = gen.Sample(10, 20);
+```
+
+Beware though; they each have different input parameters:
+
+* PerlinNoise
+  * Seed - A number that will generate unique noise.
+  * Octaves - The number of subsequent levels to sample.
+  * Frequency - Denotes the scale of the noise (lower spreads it out).
+  * Lacunarity - Hard to describe, but a safe value is usually around 2.0
+  * Persistence - Again; hard to describe, but a safe value is usually around 0.5
+* OffsetNoise
+  * Seed - A number that will generate unique noise.
+  * Octaves - The number of subsequent levels to sample.
+  * Frequency - Denotes the scale of the noise (lower spreads it out).
+  * Lacunarity - Hard to describe, but a safe value is usually around 2.0
+  * Persistence - Again; hard to describe, but a safe value is usually around 0.5
+  * Offset - Denotes how far the sample position will be offset before sampling.
+* RidgedMultifractalNoise
+  * Seed - A number that will generate unique noise.
+  * Octaves - The number of subsequent levels to sample.
+  * Frequency - Denotes the scale of the noise (lower spreads it out).
+  * Lacunarity - Hard to describe, but a safe value is usually around 2.0
+  * Persistence - Again; hard to describe, but a safe value is usually around 0.5
+  * Power - A value denoting how thin the ridges should be.
+* DifferenceNoisew
+  * Seed - A number that will generate unique noise.
+  * Octaves - The number of subsequent levels to sample.
+  * Frequency - Denotes the scale of the noise (lower spreads it out).
+  * Lacunarity - Hard to describe, but a safe value is usually around 2.0
+  * Persistence - Again; hard to describe, but a safe value is usually around 0.5
+  * Layers - A value describing how many layers should be compared (even numbers give different results to odd numbers).
