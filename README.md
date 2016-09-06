@@ -183,7 +183,7 @@ float RemoveCutOff(float sample)
 There are a few helper classes that you can utilize in scripting. I've written them for my own personal use, but they have a lot of functionality that really helps shorten the amount of code you need to write. Some of the following functions will be fairly mandatory for effect scripts in particular.
 
 ###Numerics
-The Numerics class has a whole heap of helper functions for math-related use. You can call these functions in your script by typing 'Numerics._FunctionName_(_input variables_)
+The Numerics class has a whole heap of helper functions for math-related use. You can call these functions in your script by typing "Numerics._FunctionName_(_InputVariables_)". Be sure to separate the input variables with commas.
 * Clamp - The clamp function will take a number, a minimum and a maximum, and return a number that is bound by those constraints.
 * InterpolateCubic - Interpolates between two numbers using a cubic function and a linear amount value between 0 and 1.
 * InterpolateLinear - Interpolates between two numbers using a linear function and a linear amount value between 0 and 1.
@@ -197,4 +197,21 @@ The Numerics class has a whole heap of helper functions for math-related use. Yo
 * Power - Raises a given value to the power of a second integer value.
 * Abs - Returns the supplied value, but positive if it wasn't already.
 
-* **HeightRender** - This class is the 
+###HeightRender
+This class is the heart and soul of your renders; it holds all the information related to the topology of your map.
+
+The principal functions that you need to worry about are _TryGetValue_ and _TrySetValue_. The former function will attempt to get a height value from the field, while the latter will attempt to edit a value in the field. Both functions return a value of either 'true' or 'false' that denotes whether the location you supplied was within the bounds of the field (this includes wrapping, if wrapping is enabled).
+
+You can use them like this:
+
+```
+float sample;
+if (heightField.TryGetValue(10, 8, out sample))
+{
+	_Your sample value is now equal to the height value at the location x = 10, y = 8._
+}
+else
+{
+	_Your sample value will be equal to zero, and your location lay outside of the field. This would probably happen if your render was bigger than 10 units wide, or 8 units high in this case._
+}
+```
