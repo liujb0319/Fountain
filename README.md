@@ -178,3 +178,7 @@ float RemoveCutOff(float sample)
 	return (sample - cutOff) / (1 - cutOff);
 }
 ```
+
+##4: Scripting API
+There are a few helper classes that you can utilize in scripting. I've written them for my own personal use, but they have a lot of functionality that really helps shorten the amount of code you need to write. Some of the following functions will be fairly mandatory for effect scripts in particular.
+
