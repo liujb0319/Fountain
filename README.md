@@ -182,3 +182,16 @@ float RemoveCutOff(float sample)
 ##4: Scripting API
 There are a few helper classes that you can utilize in scripting. I've written them for my own personal use, but they have a lot of functionality that really helps shorten the amount of code you need to write. Some of the following functions will be fairly mandatory for effect scripts in particular.
 
+* Numerics - The Numerics class has a whole heap of helper functions for math-related use.
+  * Clamp - The clamp function will take a number, a minimum and a maximum, and return a number that is bound by those constraints.
+  * InterpolateCubic - Interpolates between two numbers using a cubic function and a linear amount value between 0 and 1.
+  * InterpolateLinear - Interpolates between two numbers using a linear function and a linear amount value between 0 and 1.
+  * Modulo - performs a modulo operation by repeating a given number by another number.
+  * Floor - Takes a value and rounds it down to the nearest whole value.
+  * Ceiling - Takes a value and rounds it up to the nearest whole value.
+  * Round - Takes a value and rounds it to the nearest whole value.
+  * Min - Returns the smallest of the two supplied values.
+  * Max - Returns the largest of the two supplied values.
+  * Pow - Raises a given value to the power of a second value. This function handles negative and fractional powers, but is slower than the 'Power' function.
+  * Power - Raises a given value to the power of a second integer value.
+  * Abs - Returns the supplied value, but positive if it wasn't already.
