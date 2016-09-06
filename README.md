@@ -200,18 +200,31 @@ The Numerics class has a whole heap of helper functions for math-related use. Yo
 ###HeightRender
 This class is the heart and soul of your renders; it holds all the information related to the topology of your map.
 
-The principal functions that you need to worry about are _TryGetValue_ and _TrySetValue_. The former function will attempt to get a height value from the field, while the latter will attempt to edit a value in the field. Both functions return a value of either 'true' or 'false' that denotes whether the location you supplied was within the bounds of the field (this includes wrapping, if wrapping is enabled).
+The principal functions that you need to worry about are _TryGetValue_ and _TrySetValue_. The former function will attempt to get a height value from the field, while the latter will attempt to edit a value in the field. Both functions return a value of either _true_ or _false_ that denotes whether the location you supplied was within the bounds of the field (this includes wrapping, if wrapping is enabled).
 
-You can use them like this:
+You can use them like this...
 
 ```
 float sample;
 if (heightField.TryGetValue(10, 8, out sample))
 {
-	_Your sample value is now equal to the height value at the location x = 10, y = 8._
+	//Your sample value is now equal to the height value at the location x = 10, y = 8.
 }
 else
 {
-	_Your sample value will be equal to zero, and your location lay outside of the field. This would probably happen if your render was bigger than 10 units wide, or 8 units high in this case._
+	//Your sample value will be equal to zero because the location lay outside the field.
+}
+```
+
+or like this:
+
+```
+if (heightRender.TrySetValue(10, 8, 100.3f))
+{
+	//Your location lay within the field and the value is now equal to _100.3_ (subject to clamping, if the field is set to clamp values).
+}
+else
+{
+	//Your location lay outside the field and nothing in the field was changed.
 }
 ```
