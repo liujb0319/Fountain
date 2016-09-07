@@ -183,7 +183,7 @@ float RemoveCutOff(float sample)
 Scripting in Fountain utilizes C#'s dynamic assembly. The language isn't the easiest for beginners, so here are a few conventions that will come in handy when trying to decipher scripts and write your own.
 
 ###Semicolons
-Semicolons tell C# that you're done with your current instruction. They need to be placed after pretty much everything you do. You'll see them frequently in example scripts; just remember that they _are_ necessary. If your code fails to compile and you can't figure out why; checking for missing semicolons first because it's a common mistake.
+Semicolons tell C# that you're done with your current instruction. They need to be placed after pretty much everything you do. You'll see them frequently in example scripts; just remember that they _are_ necessary. If your code fails to compile and you can't figure out why; check for missing semicolons first because it's a common mistake.
 
 ###Logical Statements and Operators
 Logical operators and statements are bread and butter in programming languages. There's already a wealth of documentation about them so I'll refrain from re-inventing the wheel and instead [link the page](https://msdn.microsoft.com/en-us/library/xt4z8b0f.aspx) that I myself learned them from.
