@@ -91,7 +91,7 @@ float Blend(float baseValue, float newValue)
 Finally; the most useful brush: The noise brush. These brushes use a noise field to generate random strokes. They add an element of chaos to your coastlines and terrain, making them look more organic.
 
 ```
-NoiseGenerator gen = new PerlinNoise(0, 4, 20, 2, 0.5f);
+NoiseGenerator gen = new PerlinNoise(0, 4, 0.1f, 2, 0.5f);
 
 float Sample(int x, int y, float intensity, int left, int right, int top, int bottom)
 {
