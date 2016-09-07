@@ -180,7 +180,28 @@ float RemoveCutOff(float sample)
 ```
 
 ##4: C# Scripting Conventions
-In C# 
+Scripting in Fountain utilizes C#'s dynamic assembly. The language can be a bit of a headache for beginners, so here are a few conventions that will come in handy when trying to decipher scripts and write your own.
+
+###Variables
+Just as in algebra; programming languages permit you to create variables. Variables can be called whatever you want (with a few exceptions) and you can assign them whatever value you want. The tricky bit for beginners is knowing how to create them, and what exactly they need to create. There are a few ways to do this:
+
+The following instruction creates a variable called _a_ and gives it a value of 10.
+```
+int a = 10;
+```
+But what does the _int_ mean? Well _int_ is the type of variable _a_ corresponds to. Anything designated as an _int_ will be a whole number (1, 12, 93, etc).
+
+If you need fractions, or partial numbers, use _float_ instead of _int_ like so:
+```
+float a = 10.5f;
+```
+It works the exact same as before, but you need to place an _f_ after the number because the C# compiler is a lot dumber than you are and doesn't know what _10.5_ is without being explicitly told.
+
+If you'd like to avoid a lot of this nonsense, consider using the _var_ keyword instead:
+```
+var a = 10.5;
+```
+This does the exact same thing as the previous example, but C# will automatically figure out what _a_ is supposed to be. There are a couple of annoying drawbacks to doing this, but none that really apply to the majority of scripting.
 
 ##5: Scripting API
 There are a few helper classes that you can utilize in scripting. I've written them for my own personal use, but they have a lot of functionality that really helps shorten the amount of code you need to write. Some of the following functions will be fairly mandatory for effect scripts in particular.
