@@ -186,7 +186,7 @@ Scripting in Fountain utilizes C#'s dynamic assembly. The language isn't the eas
 Semicolons tell C# that you're done with your current instruction. They need to be placed after pretty much everything you do. You'll see them frequently in example scripts; just remember that they _are_ necessary. If your code fails to compile and you can't figure out why; checking for missing semicolons first because it's a common mistake.
 
 ###Logical Statements and Operators
-Logical operators and structures are bread and butter in programming languages. There's already a wealth of documentation about them so I'll refrain from re-inventing the wheel and instead [link the page](https://msdn.microsoft.com/en-us/library/xt4z8b0f.aspx) that I myself learned them from.
+Logical operators and statements are bread and butter in programming languages. There's already a wealth of documentation about them so I'll refrain from re-inventing the wheel and instead [link the page](https://msdn.microsoft.com/en-us/library/xt4z8b0f.aspx) that I myself learned them from.
 
 ###Variables
 At the end of the day, all programs really do is manipulate information, and you store said information in variables. [This page](https://msdn.microsoft.com/en-us/library/wew5ytx4(v=vs.90).aspx) describes them more thoroughly than I ever could.
@@ -318,7 +318,7 @@ Beware though; they each have different input parameters:
   * Lacunarity - Hard to describe, but a safe value is usually around 2.0
   * Persistence - Again; hard to describe, but a safe value is usually around 0.5
   * Power - A value denoting how thin the ridges should be.
-* DifferenceNoisew
+* DifferenceNoise
   * Seed - A number that will generate unique noise.
   * Octaves - The number of subsequent levels to sample.
   * Frequency - Denotes the scale of the noise (lower spreads it out).
