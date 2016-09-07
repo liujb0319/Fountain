@@ -180,28 +180,19 @@ float RemoveCutOff(float sample)
 ```
 
 ##4: C# Scripting Conventions
-Scripting in Fountain utilizes C#'s dynamic assembly. The language can be a bit of a headache for beginners, so here are a few conventions that will come in handy when trying to decipher scripts and write your own.
+Scripting in Fountain utilizes C#'s dynamic assembly. The language isn't the easiest for beginners, so here are a few conventions that will come in handy when trying to decipher scripts and write your own.
+
+###Semicolons
+Semicolons tell C# that you're done with your current instruction. They need to be placed after pretty much everything you do. You'll see them frequently in example scripts; just remember that they _are_ necessary. If your code fails to compile and you can't figure out why; checking for missing semicolons first because it's a common mistake.
+
+###Logical Statements and Operators
+Logical operators and structures are bread and butter in programming languages. There's already a wealth of documentation about them so I'll refrain from re-inventing the wheel and instead [link the page](https://msdn.microsoft.com/en-us/library/xt4z8b0f.aspx) that I myself learned them from.
 
 ###Variables
-Just as in algebra; programming languages permit you to create variables. Variables can be called whatever you want (with a few exceptions) and you can assign them whatever value you want. The tricky bit for beginners is knowing how to create them, and what exactly they need to create. There are a few ways to do this:
+At the end of the day, all programs really do is manipulate information, and you store said information in variables. [This page](https://msdn.microsoft.com/en-us/library/wew5ytx4(v=vs.90).aspx) describes them more thoroughly than I ever could.
 
-The following instruction creates a variable called _a_ and gives it a value of 10.
-```
-int a = 10;
-```
-But what does the _int_ mean? Well _int_ is the type of variable _a_ corresponds to. Anything designated as an _int_ will be a whole number (1, 12, 93, etc).
-
-If you need fractions, or partial numbers, use _float_ instead of _int_ like so:
-```
-float a = 10.5f;
-```
-It works the exact same as before, but you need to place an _f_ after the number because the C# compiler is a lot dumber than you are and doesn't know what _10.5_ is without being explicitly told.
-
-If you'd like to avoid a lot of this nonsense, consider using the _var_ keyword instead:
-```
-var a = 10.5;
-```
-This does the exact same thing as the previous example, but C# will automatically figure out what _a_ is supposed to be. There are a couple of annoying drawbacks to doing this, but none that really apply to the majority of scripting.
+###Structures and Objects
+Scripting doesn't just let you write functions; you can write classes and structures as well if you need them. Detail on objects can be found [here](https://msdn.microsoft.com/en-us/library/ey4ke239(v=vs.90).aspx), while detail on structures/value types can be found [here](https://msdn.microsoft.com/en-us/library/89892kc7(v=vs.90).aspx).
 
 ##5: Scripting API
 There are a few helper classes that you can utilize in scripting. I've written them for my own personal use, but they have a lot of functionality that really helps shorten the amount of code you need to write. Some of the following functions will be fairly mandatory for effect scripts in particular.
