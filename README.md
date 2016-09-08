@@ -6,6 +6,12 @@ Fountain for Windows can be downloaded for installation [here](https://www.dropb
 
 If you would like to install Fountain on a Linux or Macintosh operating system, please download and compile the source code provided using Mono. I will, at some point, include a binary for Linux, but I have no Linux machine upon which to perform testing so the task may fall to another poor, unfortunate soul.
 
+# Known Issues
+
+* Brush and Effect scripts need to be compiled after a document is loaded. This is technically working as intended but it's still annoying and I'm working on a solution.
+* Renders don't colorize themselves after loading a document. Again; technically working as intended but annoying nonetheless and I'm working on it.
+* Undo and Redo functions don't exist for painting. I know about this one and it's a real problem but I'm building an undo system.
+
 #Tutorials
 Fountain might be a bit of a headache for some people - it's designed to be very, very flexible but with that comes certain magnitudes of complexity that most people might not be willing to accept. Much of this complexity comes from the brush and effect scripting, but thankfully; much of that will be done away with if you grab brushes and effects from the tutorials or other users.
 
