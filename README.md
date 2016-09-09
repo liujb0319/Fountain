@@ -2,7 +2,7 @@
 A map painting/generating software kit for worldbuilders.
 
 #Installation
-Fountain for Windows can be downloaded for installation [here]().
+Fountain for Windows can be downloaded for installation [here](https://github.com/Mavichist/Fountain/releases).
 
 If you would like to install Fountain on a Linux or Macintosh operating system, please download and compile the source code provided using Mono. I will, at some point, include a binary for Linux, but I have no Linux machine upon which to perform testing so the task may fall to another poor, unfortunate soul.
 
