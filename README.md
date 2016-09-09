@@ -12,6 +12,7 @@ If you would like to install Fountain on a Linux or Macintosh operating system, 
 * Renders don't colorize themselves after loading a document. Again; technically working as intended but annoying nonetheless and I'm working on it.
 * Undo and Redo functions don't exist yet for painting. I know about this one and it's a real problem so I'm devoting quite a bit of attention to it.
 * Change the utility creation to include a 'New' button for the sake of intuitiveness.
+* Add a way to access basic scripts in the client rather than just the tutorial.
 
 #Tutorials
 Fountain might be a bit of a headache for some people - it's designed to be very, very flexible but with that comes certain magnitudes of complexity that most people might not be willing to accept. Much of this complexity comes from the brush and effect scripting, but thankfully; much of that will be done away with if you grab brushes and effects from the tutorials or other users.
