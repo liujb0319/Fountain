@@ -10,6 +10,9 @@ If you would like to run Fountain on Mac OSX or Linux, download the windows bina
 
 * Undo and Redo functions don't exist yet for painting. I know about this one and it's a real problem so I'm devoting quite a bit of attention to it.
 
+#Forkers!
+Hey guys; if you're forking this repo then you'll be happy to know that I'm including the DLL dependencies in the project now. They're located in 'Fountain/bin/Release'.
+
 #Tutorials
 Fountain might be a bit of a headache for some people - it's designed to be very, very flexible but with that comes certain magnitudes of complexity that most people might not be willing to accept. Much of this complexity comes from the brush and effect scripting, but thankfully; much of that will be done away with if you grab brushes and effects from the tutorials or other users.
 

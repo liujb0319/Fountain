@@ -31,6 +31,7 @@ namespace Fountain.Forms
 {
 	public partial class PhotonDialog : Form
 	{
+		private bool skipBoxUpdate = false;
 		public Photon Photon
 		{
 			get
@@ -102,9 +103,55 @@ namespace Fountain.Forms
 			UpdateFromBars();
 		}
 
+		private void redBox_ValueChanged(object sender, EventArgs e)
+		{
+			skipBoxUpdate = true;
+			redBar.Value = (int)redBox.Value;
+		}
+		private void greenBox_ValueChanged(object sender, EventArgs e)
+		{
+			skipBoxUpdate = true;
+			greenBar.Value = (int)greenBox.Value;
+		}
+		private void blueBox_ValueChanged(object sender, EventArgs e)
+		{
+			skipBoxUpdate = true;
+			blueBar.Value = (int)blueBox.Value;
+		}
+		private void alphaBox_ValueChanged(object sender, EventArgs e)
+		{
+			skipBoxUpdate = true;
+			alphaBar.Value = (int)alphaBox.Value;
+		}
+
+		private void redBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Return) e.SuppressKeyPress = true;
+		}
+		private void greenBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Return) e.SuppressKeyPress = true;
+		}
+		private void blueBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Return) e.SuppressKeyPress = true;
+		}
+		private void alphaBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Return) e.SuppressKeyPress = true;
+		}
+
 		public void UpdateFromBars()
 		{
 			colorPanel.Photon = new Photon((byte)redBar.Value, (byte)greenBar.Value, (byte)blueBar.Value, (byte)alphaBar.Value);
+			if (!skipBoxUpdate)
+			{
+				redBox.Value = redBar.Value;
+				greenBox.Value = greenBar.Value;
+				blueBox.Value = blueBar.Value;
+				alphaBox.Value = alphaBar.Value;
+			}
+			else skipBoxUpdate = false;
 		}
 	}
 }

@@ -76,13 +76,16 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LlewellynMath">
+    <Reference Include="LlewellynMath, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\LlewellynAuxiliaryLibrary\LlewellynMedia\bin\Release\LlewellynMath.dll</HintPath>
     </Reference>
-    <Reference Include="LlewellynMedia">
+    <Reference Include="LlewellynMedia, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\LlewellynAuxiliaryLibrary\LlewellynMedia\bin\Release\LlewellynMedia.dll</HintPath>
     </Reference>
-    <Reference Include="LlewellynScripting">
+    <Reference Include="LlewellynScripting, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\LlewellynAuxiliaryLibrary\LlewellynScripting\bin\Release\LlewellynScripting.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -228,7 +231,6 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
