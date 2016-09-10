@@ -644,7 +644,16 @@ namespace Fountain
 			Clear();
 			if (File.Exists(path))
 			{
-				FileStream stream = new FileStream(path, FileMode.Open);
+				FileStream stream = null;
+				try
+				{
+					stream = new FileStream(path, FileMode.Open);
+				}
+				catch
+				{
+					if (stream != null) stream.Close();
+					return false;
+				}
 				try
 				{
 					byte[] countBuf = new byte[4];
@@ -692,7 +701,7 @@ namespace Fountain
 				}
 				catch
 				{
-					associatedPath = null;
+					Clear();
 					return false;
 				}
 				finally
