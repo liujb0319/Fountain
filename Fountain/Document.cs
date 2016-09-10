@@ -639,7 +639,7 @@ namespace Fountain
 			}
 		}
 		//Loading
-		public static bool Load(string path)
+		public static IOEvaluation Load(string path)
 		{
 			Clear();
 			if (File.Exists(path))
@@ -651,8 +651,7 @@ namespace Fountain
 				}
 				catch
 				{
-					if (stream != null) stream.Close();
-					return false;
+					return IOEvaluation.CannotOpenStream;
 				}
 				try
 				{
@@ -697,12 +696,12 @@ namespace Fountain
 					//Path and Callback
 					associatedPath = path;
 					if (loaded != null) loaded(path);
-					return true;
+					return IOEvaluation.Success;
 				}
 				catch
 				{
 					Clear();
-					return false;
+					return IOEvaluation.ConversionError;
 				}
 				finally
 				{
@@ -712,7 +711,7 @@ namespace Fountain
 			else
 			{
 				associatedPath = path;
-				return false;
+				return IOEvaluation.FileDoesNotExist;
 			}
 		}
 		private static OnLoaded loaded;
@@ -876,9 +875,17 @@ namespace Fountain
 			return bs;
 		}
 		//Saving
-		public static bool Save(string path)
+		public static IOEvaluation Save(string path)
 		{
-			FileStream stream = new FileStream(path, FileMode.Create);
+			FileStream stream = null;
+			try
+			{
+				stream = new FileStream(path, FileMode.Create);
+			}
+			catch
+			{
+				return IOEvaluation.CannotOpenStream;
+			}
 			try
 			{
 				//Save Renders
@@ -912,12 +919,12 @@ namespace Fountain
 				//Path and Callback
 				associatedPath = path;
 				if (saved != null) saved(path);
-				return true;
+				return IOEvaluation.Success;
 			}
 			catch
 			{
 				associatedPath = null;
-				return false;
+				return IOEvaluation.ConversionError;
 			}
 			finally
 			{
@@ -980,6 +987,8 @@ namespace Fountain
 		public delegate void OnCleared();
 		public delegate void OnLoaded(string path);
 		public delegate void OnSaved(string path);
+
+		public enum IOEvaluation { FileDoesNotExist, CannotOpenStream, ConversionError, Success }
 		#endregion
 	}
 }

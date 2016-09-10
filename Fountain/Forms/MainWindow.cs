@@ -52,7 +52,7 @@ namespace Fountain.Forms
 		{
 			CenterToScreen();
 			InitializeComponent();
-			if (filePath != null && !Document.Load(filePath)) MessageBox.Show("The file at " + filePath + " could not be loaded.", "File Parsing Error");
+			if (filePath != null) HandleFileLoad(filePath);
 
 			renderArea.MouseWheel += renderArea_MouseWheel;
 			Application.Idle += Application_Idle;
@@ -243,24 +243,21 @@ namespace Fountain.Forms
 			{
 				openFileDialog.Filter = "Fountain Document (*.fdf)|*.fdf";
 				openFileDialog.FileName = Document.AssociatedPath;
-				if (openFileDialog.ShowDialog() == DialogResult.OK && !Document.Load(openFileDialog.FileName))
-					MessageBox.Show("The file at " + openFileDialog.FileName + " could not be loaded.", "File Parsing Error");
+				if (openFileDialog.ShowDialog() == DialogResult.OK) HandleFileLoad(openFileDialog.FileName);
 			}
 		}
 		private void saveDocumentToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			if (Document.AssociatedPath != null)
 			{
-				if (!Document.Save(Document.AssociatedPath))
-					MessageBox.Show("There was an error saving the file to " + Document.AssociatedPath + ".", "File Parsing Error");
+				HandleFileSave(Document.AssociatedPath);
 			}
 			else saveDocumentAsToolStripMenuItem_Click(sender, e);
 		}
 		private void saveDocumentAsToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			saveFileDialog.Filter = "Fountain Document (*.fdf)|*.fdf";
-			if (saveFileDialog.ShowDialog() == DialogResult.OK && !Document.Save(saveFileDialog.FileName))
-				MessageBox.Show("There was an error saving the file to " + saveFileDialog.FileName + ".", "File Parsing Error");
+			if (saveFileDialog.ShowDialog() == DialogResult.OK) HandleFileSave(saveFileDialog.FileName);
 		}
 		//Renders
 		private void renderNameBox_KeyDown(object sender, KeyEventArgs e)
@@ -463,6 +460,42 @@ namespace Fountain.Forms
 		private void rightBrushNameBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			Document.RightBrushName = rightBrushNameBox.Text;
+		}
+
+		private static void HandleFileLoad(string path)
+		{
+			if (path != null)
+			{
+				switch (Document.Load(path))
+				{
+					case Document.IOEvaluation.CannotOpenStream:
+						MessageBox.Show(string.Format("The file at {0} could not be loaded. This was likely caused by a permissions issue - try running Fountain as Administrator.", path), "Cannot Open Stream");
+						break;
+					case Document.IOEvaluation.ConversionError:
+						MessageBox.Show(string.Format("The file at {0} could not be loaded. The file may be corrupt, or the file standard may have changed.", path), "File Parsing Error");
+						break;
+					case Document.IOEvaluation.FileDoesNotExist:
+						MessageBox.Show(string.Format("There was no file located at {0}.", path), "File Does Not Exist");
+						break;
+				}
+			}
+			else MessageBox.Show("The supplied path was null.", "File Path Null");
+		}
+		private static void HandleFileSave(string path)
+		{
+			if (path != null)
+			{
+				switch (Document.Save(path))
+				{
+					case Document.IOEvaluation.CannotOpenStream:
+						MessageBox.Show(string.Format("The file could not be saved to {0}. This was likely caused by a permissions issue - try running Fountain as Administrator.", path), "Cannot Open Stream");
+						break;
+					case Document.IOEvaluation.ConversionError:
+						MessageBox.Show(string.Format("The file could not be saved to {0}. The document may be corrupt.", path), "Document Conversion Error");
+						break;
+				}
+			}
+			else MessageBox.Show("The supplied path was null.", "File Path Null");
 		}
 	}
 }
