@@ -1,7 +1,7 @@
 # Fountain
 A map painting/generating software kit for worldbuilders.
 
-#Installation
+# Installation
 Fountain for Windows can be downloaded for installation [here](https://github.com/Mavichist/Fountain/releases).
 
 If you would like to run Fountain on Mac OSX or Linux, download the windows binary (linked above) and run it using [Mono](http://www.mono-project.com/). Once Mono is installed; running Fountain should be as easy as typing 'mono pathto/Fountain.exe' into your commandline.
@@ -10,30 +10,30 @@ If you would like to run Fountain on Mac OSX or Linux, download the windows bina
 
 * Undo and Redo functions don't exist yet for painting. I know about this one and it's a real problem so I'm devoting quite a bit of attention to it.
 
-#Forkers!
+# Forkers!
 Hey guys; if you're forking this repo then you'll be happy to know that I'm including the DLL dependencies in the project now. They're located in 'Fountain/bin/Release'.
 
-#Tutorials
+# Tutorials
 Fountain might be a bit of a headache for some people - it's designed to be very, very flexible but with that comes certain magnitudes of complexity that most people might not be willing to accept. Much of this complexity comes from the brush and effect scripting, but thankfully; much of that will be done away with if you grab brushes and effects from the tutorials or other users.
 
-##1: The Document
+## 1: The Document
 A Fountain document contains renders, brushes, effects and gradients. When you save a Fountain document, the brush and effect scripts are saved to the file along with the heightmaps behind the renders and the data from your gradients.
 
 Adding any of these four elements to a document is easy - click the appropriate tab, then type a name for the item into the combo box. Once you're happy with the name, hit enter to create a new render, brush, effect or gradient and add it to the document. A window will appear allowing you to alter the attributes of the item - this window can always be re-opened by clicking the appropriate 'Edit' option later in the same tab.
 
-##2: Renders
+## 2: Renders
 Renders are the images and accompanying heightmaps that constitute the goal and output of the entire program. When adding a render to a document, consider what attributes might be appropriate for it. If the render is to be a world map then consider selecting horizontal (x-axis) wrapping so that you can paint accross the edge of the map and have the result wrap back to the other side.
 
 Renders are subject to both Gradients and Effects. Gradients determine how the heightmaps are colorized, while Effects alter the appearance of a Render even further. If no Gradients are supplied, the render will simply appear in grayscale.
 
-##3: Scripting
+## 3: Scripting
 Renders and gradients are simple enough but things get trickier when dealing in brushes and effects. This is because there is no default implementation for brushes or effects in Fountain; you need to write your own or use someone elses.
 
 The actual scripting component of Fountain is performed in a language called C#, and it's actually not as troublesome as it might appear. Your scripts can include anything (including classes, structs, global variables, enumerated types and other functions) but principally they will only consist of a function or two, depending on what you're scripting.
 
 In Fountain's scripting you have access to a couple of helper APIs that I've written. They mostly deal with annoying math functionality and the like.
 
-###Brushes
+### Brushes
 Brushes are integral if you want to do any painting in Fountain. Their scripts consist of two parts; the 'Sample' function, and the 'Blend' function. The 'Sample' function defines the shape of your brush, while the 'Blend' function denotes how the shape is blended into the area you are painting.
 
 Soft, circular brushes are a caste favourite in image manipulation - they're incredibly useful. Essentially what this script is doing is determining how far the current point (at the coordinates of 'x' and 'y') is from the center of the brush area (halfway between 'top' 'left' and 'bottom' 'right').
@@ -115,7 +115,7 @@ float Blend(float baseValue, float newValue)
 }
 ```
 
-###Effects
+### Effects
 Effects are functions that are laid over the render when it updates. They can be really simple or really tricky, but the couple of following examples should demonstrate them relatively clearly.
 
 The most basic effects will be things like overlays that simply change the color of the render. The following effect script tints the entire render red:
@@ -186,25 +186,25 @@ float RemoveCutOff(float sample)
 }
 ```
 
-##4: C# Scripting Conventions
+## 4: C# Scripting Conventions
 Scripting in Fountain utilizes C#'s dynamic assembly. The language isn't the easiest for beginners, so here are a few conventions that will come in handy when trying to decipher scripts and write your own.
 
-###Semicolons
+### Semicolons
 Semicolons tell C# that you're done with your current instruction. They need to be placed after pretty much everything you do. You'll see them frequently in example scripts; just remember that they _are_ necessary. If your code fails to compile and you can't figure out why; check for missing semicolons first because it's a common mistake.
 
-###Logical Statements and Operators
+### Logical Statements and Operators
 Logical operators and statements are bread and butter in programming languages. There's already a wealth of documentation about them so I'll refrain from re-inventing the wheel and instead [link the page](https://msdn.microsoft.com/en-us/library/xt4z8b0f.aspx) that I myself learned them from.
 
-###Variables
+### Variables
 At the end of the day, all programs really do is manipulate information, and you store said information in variables. [This page](https://msdn.microsoft.com/en-us/library/wew5ytx4(v=vs.90).aspx) describes them more thoroughly than I ever could.
 
-###Structures and Objects
+### Structures and Objects
 Scripting doesn't just let you write functions; you can write classes and structures as well if you need them. Detail on objects can be found [here](https://msdn.microsoft.com/en-us/library/ey4ke239(v=vs.90).aspx), while detail on structures/value types can be found [here](https://msdn.microsoft.com/en-us/library/89892kc7(v=vs.90).aspx).
 
-##5: Scripting API
+## 5: Scripting API
 There are a few helper classes that you can utilize in scripting. I've written them for my own personal use, but they have a lot of functionality that really helps shorten the amount of code you need to write. Some of the following functions will be fairly mandatory for effect scripts in particular.
 
-###Numerics
+### Numerics
 The Numerics class has a whole heap of helper functions for math-related use. You can call these functions in your script by typing "Numerics._FunctionName_(_InputVariables_)". Be sure to separate the input variables with commas.
 * Clamp - The clamp function will take a number, a minimum and a maximum, and return a number that is bound by those constraints.
 * InterpolateCubic - Interpolates between two numbers using a cubic function and a linear amount value between 0 and 1.
@@ -219,7 +219,7 @@ The Numerics class has a whole heap of helper functions for math-related use. Yo
 * Power - Raises a given value to the power of a second integer value.
 * Abs - Returns the supplied value, but positive if it wasn't already.
 
-###HeightRender
+### HeightRender
 This class is the heart and soul of your renders; it holds all the information related to the topology of your map.
 
 The principal functions that you need to worry about are _TryGetValue_ and _TrySetValue_. The former function will attempt to get a height value from the field, while the latter will attempt to edit a value in the field. Both functions return a value of either _true_ or _false_ that denotes whether the location you supplied was within the bounds of the field (this includes wrapping, if wrapping is enabled).
@@ -251,7 +251,7 @@ else
 }
 ```
 
-###Photon
+### Photon
 Photons are a simple little structures that denote colors. They contain a value each for _red_, _green_, _blue_ and _transparency_. They are predominantly used in effect scripting.
 
 Photons can be made by doing the following:
@@ -282,7 +282,7 @@ Photon gray = Photon.InterpolateLinear(black, white, 0.5f);
 Photon lightGray = Photon.InterpolateLinear(black, white, 0.8f);
 ```
 
-###Noise Generators
+### Noise Generators
 Noise generators can be utilized in both effect and brush scripting and provide you with an avenue for creating organic topographical features and effects.
 
 There are a few kinds of built-in noise generator. They are notably:
