@@ -20,7 +20,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Reflection;
+using System.Drawing;
 
+using LlewellynMath;
+using LlewellynMath.NoiseGenerators;
 using LlewellynMedia;
 using LlewellynScripting;
 
@@ -60,7 +64,7 @@ namespace Fountain
 		//Setting
 		public static bool SetRender(string name, HeightRender render)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
 				renders[name] = render;
 				if (renderSet != null) renderSet(name, render);
@@ -174,7 +178,7 @@ namespace Fountain
 		//Setting
 		public static bool SetGradient(string name, PhotonGradient gradient)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
 				gradients[name] = gradient;
 				if (gradientSet != null) gradientSet(name, gradient);
@@ -294,7 +298,7 @@ namespace Fountain
 		//Setting
 		public static bool SetEffect(string name, HeightRender.Effect effect, CSScript script = null)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
 				if (script == null) script = new CSScript();
 				EffectScript es;
@@ -459,7 +463,7 @@ namespace Fountain
 		//Setting
 		public static bool SetBrush(string name, HeightBrush brush, CSScript script = null)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
 				if (script == null) script = new CSScript();
 				BrushScript bs;
@@ -748,6 +752,7 @@ namespace Fountain
 				stream.Read(buffer, 0, sizeof(float));
 				render.HeightField.Data[i] = BitConverter.ToSingle(buffer, 0);
 			}
+			render.UpdateAll(null, null);
 
 			return render;
 		}
@@ -775,7 +780,35 @@ namespace Fountain
 		private static EffectScript LoadEffect(Stream stream)
 		{
 			EffectScript es = new EffectScript() { effect = null, script = new CSScript() };
+
+			#region Attempt Compilation
+			es.script.RequiredTypes.Add(typeof(Color));
+			es.script.RequiredTypes.Add(typeof(HeightField));
+			es.script.RequiredTypes.Add(typeof(Photon));
+			es.script.RequiredTypes.Add(typeof(Numerics));
+			es.script.RequiredTypes.Add(typeof(Math));
+			es.script.RequiredTypes.Add(typeof(PerlinNoise));
 			es.script.Source = LoadText(stream);
+
+			string errors;
+			if (es.script.Compile(out errors))
+			{
+				MethodInfo applyInfo;
+				if (es.script.TryGetMember<MethodInfo>("Apply", out applyInfo))
+				{
+					try
+					{
+						HeightRender.Effect effect = (HeightRender.Effect)applyInfo.CreateDelegate(typeof(HeightRender.Effect), es.script.ScriptObject);
+						es.effect = effect;
+					}
+					catch
+					{
+						//Do nothing
+					}
+				}
+			}
+			#endregion
+
 			return es;
 		}
 		private static BrushScript LoadBrush(Stream stream)
@@ -792,7 +825,44 @@ namespace Fountain
 			int precision = BitConverter.ToInt32(buffer, 0);
 
 			BrushScript bs = new BrushScript() { brush = new HeightBrush(width, height, power, precision), script = new CSScript() };
+
+			#region Attempt Compilation
+			bs.script.RequiredTypes.Add(typeof(Math));
+			bs.script.RequiredTypes.Add(typeof(Numerics));
+			bs.script.RequiredTypes.Add(typeof(PerlinNoise));
 			bs.script.Source = LoadText(stream);
+
+			string errors;
+			if (bs.script.Compile(out errors))
+			{
+				MethodInfo sampleInfo;
+				if (bs.script.TryGetMember<MethodInfo>("Sample", out sampleInfo))
+				{
+					try
+					{
+						HeightBrush.SampleFunction sample = (HeightBrush.SampleFunction)sampleInfo.CreateDelegate(typeof(HeightBrush.SampleFunction), bs.script.ScriptObject);
+						bs.brush.Sample = sample;
+					}
+					catch
+					{
+						//Do nothing
+					}
+				}
+				MethodInfo blendInfo;
+				if (bs.script.TryGetMember<MethodInfo>("Blend", out blendInfo))
+				{
+					try
+					{
+						HeightBrush.BlendFunction blend = (HeightBrush.BlendFunction)blendInfo.CreateDelegate(typeof(HeightBrush.BlendFunction), bs.script.ScriptObject);
+						bs.brush.Blend = blend;
+					}
+					catch
+					{
+						//Do nothing
+					}
+				}
+			}
+			#endregion
 
 			return bs;
 		}

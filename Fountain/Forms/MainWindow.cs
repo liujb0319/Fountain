@@ -267,20 +267,29 @@ namespace Fountain.Forms
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsRender(renderNameBox.Text))
+				newRenderToolStripMenuItem_Click(sender, e);
+				e.SuppressKeyPress = true;
+			}
+		}
+		private void newRenderToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsRender(renderNameBox.Text))
+			{
+				if (Document.SetRender(renderNameBox.Text, null))
 				{
 					RenderDialog rd = new RenderDialog(renderNameBox.Text);
 					if (rd.ShowDialog() == DialogResult.OK)
-						if (Document.SetRender(renderNameBox.Text, new HeightRender(rd.RenderWidth, rd.RenderHeight, rd.RenderClamp, rd.RenderClampMin, rd.RenderClampMax, rd.RenderWrapX, rd.RenderWrapY)))
-						{
-							Document.SelectedRenderName = renderNameBox.Text;
-							Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
-							renderArea.Invalidate();
-						}
+					{
+						Document.SetRender(renderNameBox.Text, new HeightRender(rd.RenderWidth, rd.RenderHeight, rd.RenderClamp, rd.RenderClampMin, rd.RenderClampMax, rd.RenderWrapX, rd.RenderWrapY));
+						Document.SelectedRenderName = renderNameBox.Text;
+						Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
+						renderArea.Invalidate();
+					}
+					else Document.RemoveRender(renderNameBox.Text);
 				}
-				else Document.SelectedRenderName = renderNameBox.Text;
-				e.SuppressKeyPress = true;
+				else MessageBox.Show("Please enter a valid name for your render in the box above.", "Naming Error");
 			}
+			else MessageBox.Show(string.Format("A render named {0} already exists. Type a new name in the box above, or remove the existing render.", renderNameBox.Text), "Naming Conflict");
 		}
 		private void renderNameBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
@@ -330,19 +339,25 @@ namespace Fountain.Forms
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsGradient(gradientNameBox.Text))
-				{
-					PhotonGradient pg = new PhotonGradient(PhotonInterpolationMode.Linear);
-					pg.Add(new Photon(0, 0, 0), 0);
-					pg.Add(new Photon(1, 1, 1), 1);
-					GradientDialog gd = new GradientDialog(pg);
-					if (gd.ShowDialog() == DialogResult.OK)
-						if (Document.SetGradient(gradientNameBox.Text, pg))
-							Document.SelectedGradientName = gradientNameBox.Text;
-				}
-				else Document.SelectedGradientName = gradientNameBox.Text;
+				newGradientToolStripMenuItem_Click(sender, e);
 				e.SuppressKeyPress = true;
 			}
+		}
+		private void newGradientToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsGradient(gradientNameBox.Text))
+			{
+				PhotonGradient pg = new PhotonGradient(PhotonInterpolationMode.Linear);
+				pg.Add(new Photon(0, 0, 0), 0);
+				pg.Add(new Photon(1, 1, 1), 1);
+				if (Document.SetGradient(gradientNameBox.Text, pg))
+				{
+					GradientDialog gd = new GradientDialog(pg);
+					if (gd.ShowDialog() != DialogResult.OK) Document.RemoveGradient(gradientNameBox.Text);
+				}
+				else MessageBox.Show("Please enter a valid name for your gradient in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("A gradient named {0} already exists. Type a new name in the box above, or remove the existing gradient.", gradientNameBox.Text), "Naming Conflict");
 		}
 		private void gradientNameBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
@@ -368,14 +383,22 @@ namespace Fountain.Forms
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsEffect(effectNameBox.Text))
-					if (Document.SetEffect(effectNameBox.Text, null))
-					{
-						EffectDialog ed = new EffectDialog(effectNameBox.Text);
-						ed.Show();
-					}
+				newEffectToolStripMenuItem_Click(sender, e);
 				e.SuppressKeyPress = true;
 			}
+		}
+		private void newEffectToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsEffect(effectNameBox.Text))
+			{
+				if (Document.SetEffect(effectNameBox.Text, null))
+				{
+					EffectDialog ed = new EffectDialog(effectNameBox.Text);
+					ed.Show();
+				}
+				else MessageBox.Show("Please enter a valid name for your effect in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("An effect named {0} already exists. Type a new name in the box above, or remove the existing effect.", effectNameBox.Text), "Naming Conflict");
 		}
 		private void editEffectToolStripMenuItem_Click(object sender, EventArgs e)
 		{
@@ -403,14 +426,22 @@ namespace Fountain.Forms
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsBrush(brushNameBox.Text))
-					if (Document.SetBrush(brushNameBox.Text, new HeightBrush(64, 64, 1, 8)))
-					{
-						BrushDialog bd = new BrushDialog(brushNameBox.Text);
-						bd.Show();
-					}
+				newBrushToolStripMenuItem_Click(sender, e);
 				e.SuppressKeyPress = true;
 			}
+		}
+		private void newBrushToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsBrush(brushNameBox.Text))
+			{
+				if (Document.SetBrush(brushNameBox.Text, new HeightBrush(64, 64, 1, 8)))
+				{
+					BrushDialog bd = new BrushDialog(brushNameBox.Text);
+					bd.Show();
+				}
+				else MessageBox.Show("Please enter a valid name for your brush in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("A brush named {0} already exists. Type a new name in the box above, or remove the existing brush.", brushNameBox.Text), "Naming Conflict");
 		}
 		private void editBrushToolStripMenuItem_Click(object sender, EventArgs e)
 		{

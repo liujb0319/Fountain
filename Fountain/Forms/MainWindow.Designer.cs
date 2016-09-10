@@ -68,6 +68,11 @@
 			this.paintEffectsBox = new System.Windows.Forms.CheckBox();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
+			this.newBrushToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.newEffectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+			this.newGradientToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.newRenderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.renderArea = new Fountain.Controls.RenderArea();
 			this.menuStrip1.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -140,6 +145,7 @@
 			// 
 			this.rendersToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.renderNameBox,
+            this.newRenderToolStripMenuItem,
             this.editRenderToolStripMenuItem,
             this.clearRenderToolStripMenuItem,
             this.exportRenderToolStripMenuItem,
@@ -200,6 +206,7 @@
 			// 
 			this.gradientsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.gradientNameBox,
+            this.newGradientToolStripMenuItem,
             this.editGradientToolStripMenuItem,
             this.removeGradientToolStripMenuItem});
 			this.gradientsToolStripMenuItem.Name = "gradientsToolStripMenuItem";
@@ -234,8 +241,10 @@
 			// 
 			this.effectsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.effectNameBox,
+            this.newEffectToolStripMenuItem,
             this.editEffectToolStripMenuItem,
             this.removeEffectToolStripMenuItem,
+            this.toolStripSeparator1,
             this.addEffectToolStripMenuItem});
 			this.effectsToolStripMenuItem.Name = "effectsToolStripMenuItem";
 			this.effectsToolStripMenuItem.Size = new System.Drawing.Size(75, 20);
@@ -275,6 +284,7 @@
 			// 
 			this.brushesToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.brushNameBox,
+            this.newBrushToolStripMenuItem,
             this.editBrushToolStripMenuItem,
             this.removeBrushToolStripMenuItem});
 			this.brushesToolStripMenuItem.Name = "brushesToolStripMenuItem";
@@ -417,6 +427,39 @@
 			this.label1.TabIndex = 3;
 			this.label1.Text = "Left";
 			// 
+			// newBrushToolStripMenuItem
+			// 
+			this.newBrushToolStripMenuItem.Name = "newBrushToolStripMenuItem";
+			this.newBrushToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+			this.newBrushToolStripMenuItem.Text = "New";
+			this.newBrushToolStripMenuItem.Click += new System.EventHandler(this.newBrushToolStripMenuItem_Click);
+			// 
+			// newEffectToolStripMenuItem
+			// 
+			this.newEffectToolStripMenuItem.Name = "newEffectToolStripMenuItem";
+			this.newEffectToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+			this.newEffectToolStripMenuItem.Text = "New";
+			this.newEffectToolStripMenuItem.Click += new System.EventHandler(this.newEffectToolStripMenuItem_Click);
+			// 
+			// toolStripSeparator1
+			// 
+			this.toolStripSeparator1.Name = "toolStripSeparator1";
+			this.toolStripSeparator1.Size = new System.Drawing.Size(178, 6);
+			// 
+			// newGradientToolStripMenuItem
+			// 
+			this.newGradientToolStripMenuItem.Name = "newGradientToolStripMenuItem";
+			this.newGradientToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+			this.newGradientToolStripMenuItem.Text = "New";
+			this.newGradientToolStripMenuItem.Click += new System.EventHandler(this.newGradientToolStripMenuItem_Click);
+			// 
+			// newRenderToolStripMenuItem
+			// 
+			this.newRenderToolStripMenuItem.Name = "newRenderToolStripMenuItem";
+			this.newRenderToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+			this.newRenderToolStripMenuItem.Text = "New";
+			this.newRenderToolStripMenuItem.Click += new System.EventHandler(this.newRenderToolStripMenuItem_Click);
+			// 
 			// renderArea
 			// 
 			this.renderArea.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("renderArea.BackgroundImage")));
@@ -496,6 +539,11 @@
 		private System.Windows.Forms.GroupBox groupBox2;
 		private System.Windows.Forms.CheckBox paintEffectsBox;
 		private System.Windows.Forms.ToolStripMenuItem clearRenderToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem newRenderToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem newGradientToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem newEffectToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+		private System.Windows.Forms.ToolStripMenuItem newBrushToolStripMenuItem;
 
 	}
 }

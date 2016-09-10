@@ -88,10 +88,8 @@ namespace Fountain.Forms
 			InitializeComponent();
 
 			Text = "Render - " + renderName;
-			if (Document.ContainsRender(this.renderName = renderName))
+			if (Document.ContainsRender(this.renderName = renderName) && (render = Document.GetRender(renderName)) != null)
 			{
-				render = Document.GetRender(renderName);
-
 				widthBox.Value = render.HeightField.Width;
 				widthBox.Enabled = false;
 				heightBox.Value = render.HeightField.Height;
