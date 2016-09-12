@@ -244,7 +244,7 @@ namespace Fountain.Forms
 					float strokeLength = (float)brushDelta.Length;
 					float steps = strokeLength / activeBrush.Precision + 1;
 					Vector2 brushStep = brushDelta * (1.0f / steps);
-					for (int i = 0; i < steps; i++)
+					for (int i = (int)steps - 1; i >= 0; i--)//Work backwards so the undo and redo functionality makes sense.
 					{
 						//Calculate the current brush position, based on the starting point, the step vector and the current step index.
 						Vector2 brushPosition = pointOnRender + brushStep * i;
