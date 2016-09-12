@@ -37,9 +37,9 @@ namespace Fountain.Forms
 	public partial class MainWindow : Form
 	{
 		private bool undoing;
-		private Stack<BrushAction> undoStack = new Stack<BrushAction>();
+		private ActionQueue undoQueue = new ActionQueue(2048);
 		private bool redoing;
-		private Stack<BrushAction> redoStack = new Stack<BrushAction>();
+		private ActionQueue redoQueue = new ActionQueue(2048);
 		private Vector2 lastPointOnRenderArea;
 		private Vector2 lastPointOnRender;
 
@@ -91,8 +91,8 @@ namespace Fountain.Forms
 			if (Document.SelectedRender != null)
 			{
 				renderArea.Image = Document.SelectedRender.Bitmap;
-				undoStack.Clear();
-				redoStack.Clear();
+				undoQueue.Clear();
+				redoQueue.Clear();
 			}
 			else renderArea.Image = null;
 		}
@@ -244,7 +244,7 @@ namespace Fountain.Forms
 					float strokeLength = (float)brushDelta.Length;
 					float steps = strokeLength / activeBrush.Precision + 1;
 					Vector2 brushStep = brushDelta * (1.0f / steps);
-					for (int i = (int)steps - 1; i >= 0; i--)//Work backwards so the undo function works as intended.
+					for (int i = 0; i < steps; i++)
 					{
 						//Calculate the current brush position, based on the starting point, the step vector and the current step index.
 						Vector2 brushPosition = pointOnRender + brushStep * i;
@@ -256,8 +256,8 @@ namespace Fountain.Forms
 							float[] previousData;
 							activeBrush.Paint(render.HeightField, (int)brushPosition.X, (int)brushPosition.Y, strokeLength, out brushArea, out previousData);
 							//Add this paint event to the undo queue.
-							undoStack.Push(new BrushAction(brushArea, previousData));
-							redoStack.Clear();
+							undoQueue.Enqueue(new BrushAction(brushArea, previousData));
+							redoQueue.Clear();
 							//Break up the brush area into multiple parts if they intersect the edges of the image.
 							foreach (FieldSelection fs in brushArea.SubSelectionsOf(render.HeightField))
 							{
@@ -521,9 +521,9 @@ namespace Fountain.Forms
 
 		private void Undo()
 		{
-			if (undoStack.Count > 0)
+			if (undoQueue.Count > 0)
 			{
-				BrushAction undoAction = undoStack.Pop();
+				BrushAction undoAction = undoQueue.Dequeue();
 				//Set all of the values in the affected area to what they were before the brush action took place.
 				HeightRender render = Document.SelectedRender;
 				BrushAction opposite = new BrushAction(undoAction.Selection, undoAction.Data);
@@ -558,14 +558,14 @@ namespace Fountain.Forms
 						renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
 					}
 				}
-				redoStack.Push(opposite);
+				redoQueue.Enqueue(opposite);
 			}
 		}
 		private void Redo()
 		{
-			if (redoStack.Count > 0)
+			if (redoQueue.Count > 0)
 			{
-				BrushAction redoAction = redoStack.Pop();
+				BrushAction redoAction = redoQueue.Dequeue();
 				//Set all of the values in the affected area to what they were before the undo action took place.
 				HeightRender render = Document.SelectedRender;
 				BrushAction opposite = new BrushAction(redoAction.Selection, redoAction.Data);
@@ -600,7 +600,7 @@ namespace Fountain.Forms
 						renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
 					}
 				}
-				undoStack.Push(opposite);
+				undoQueue.Enqueue(opposite);
 			}
 		}
 
@@ -663,6 +663,58 @@ namespace Fountain.Forms
 			{
 				this.selection = selection;
 				this.data = data;
+			}
+		}
+		private class ActionQueue
+		{
+			private uint capacity;
+			public uint Capacity
+			{
+				get
+				{
+					return capacity;
+				}
+				set
+				{
+					capacity = value;
+					Trim();
+				}
+			}
+			private LinkedList<BrushAction> list = new LinkedList<BrushAction>();
+			public int Count
+			{
+				get
+				{
+					return list.Count;
+				}
+			}
+
+			public ActionQueue(uint capacity)
+			{
+				this.capacity = capacity;
+			}
+
+			private void Trim()
+			{
+				if (Count > capacity)
+					for (uint i = capacity; i < Count; i++)
+						list.RemoveFirst();
+			}
+
+			public void Enqueue(BrushAction action)
+			{
+				list.AddLast(action);
+				Trim();
+			}
+			public BrushAction Dequeue()
+			{
+				BrushAction ba = list.Last.Value;
+				list.RemoveLast();
+				return ba;
+			}
+			public void Clear()
+			{
+				list.Clear();
 			}
 		}
 	}
