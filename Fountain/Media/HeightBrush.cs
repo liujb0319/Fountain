@@ -113,9 +113,10 @@ namespace Fountain.Media
 			Blend = blend;
 		}
 
-		public void Paint(HeightField field, int x, int y, float intensity, out FieldSelection brushArea)
+		public void Paint(HeightField field, int x, int y, float intensity, out FieldSelection brushArea, out float[] previousData)
 		{
-			brushArea = new FieldSelection(x - Width / 2 - Width % 2, y - Height / 2 - Height % 2, Width, Height);
+			brushArea = new FieldSelection(x - width / 2 - width % 2, y - height / 2 - height % 2, width, height);
+			previousData = new float[width * height];
 			if (sample != null && blend != null)
 			{
 				for (int _x = brushArea.Left; _x < brushArea.Right; _x++)
@@ -125,6 +126,7 @@ namespace Fountain.Media
 						float data;
 						if (field.TryGetHeight(_x, _y, out data))
 						{
+							previousData[(_y - brushArea.Top) * width + (_x - brushArea.Left)] = data;
 							float shape = sample(_x, _y, intensity * Power, brushArea.Left, brushArea.Right, brushArea.Top, brushArea.Bottom);
 							field[_x, _y] = blend(data, shape);
 						}

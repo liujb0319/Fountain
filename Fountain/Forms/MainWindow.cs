@@ -36,6 +36,10 @@ namespace Fountain.Forms
 {
 	public partial class MainWindow : Form
 	{
+		private bool undoing;
+		private Stack<BrushAction> undoStack = new Stack<BrushAction>();
+		private bool redoing;
+		private Stack<BrushAction> redoStack = new Stack<BrushAction>();
 		private Vector2 lastPointOnRenderArea;
 		private Vector2 lastPointOnRender;
 
@@ -84,7 +88,12 @@ namespace Fountain.Forms
 		}
 		private void Document_SelectedRenderChanged(string name)
 		{
-			if (Document.SelectedRender != null) renderArea.Image = Document.SelectedRender.Bitmap;
+			if (Document.SelectedRender != null)
+			{
+				renderArea.Image = Document.SelectedRender.Bitmap;
+				undoStack.Clear();
+				redoStack.Clear();
+			}
 			else renderArea.Image = null;
 		}
 		private void Document_BrushRemoved(string name, HeightBrush brush)
@@ -155,11 +164,40 @@ namespace Fountain.Forms
 		//Render Area
 		private void renderArea_KeyDown(object sender, KeyEventArgs e)
 		{
+			#region Reset Zoom and Pan
 			if (e.KeyCode == Keys.Space)
 			{
 				renderArea.ImageScale = Vector2.One;
 				renderArea.ImageOffset = Vector2.Zero;
 			}
+			#endregion
+			#region Undo
+			if (e.Control && e.KeyCode == Keys.Z)
+			{
+				undoing = true;
+			}
+			#endregion
+			#region Redo
+			if (e.Control && e.KeyCode == Keys.Y)
+			{
+				redoing = true;
+			}
+			#endregion
+		}
+		private void renderArea_KeyUp(object sender, KeyEventArgs e)
+		{
+			#region Undo
+			if (e.Control && e.KeyCode == Keys.Z)
+			{
+				undoing = false;
+			}
+			#endregion
+			#region Redo
+			if (e.Control && e.KeyCode == Keys.Y)
+			{
+				redoing = false;
+			}
+			#endregion
 		}
 		private void renderArea_MouseWheel(object sender, MouseEventArgs e)
 		{
@@ -175,6 +213,12 @@ namespace Fountain.Forms
 
 			if (renderArea.Focused && Document.SelectedRender != null)
 			{
+				#region Undo
+				if (undoing) Undo();
+				#endregion
+				#region Redo
+				if (redoing) Redo();
+				#endregion
 				#region Panning
 				if (MouseButtons == MouseButtons.Middle)
 				{
@@ -182,35 +226,47 @@ namespace Fountain.Forms
 				}
 				#endregion
 				#region Brush
+				//Select the appropriate brush based on the active mouse buttons.
 				HeightBrush activeBrush = null;
 				if (MouseButtons == MouseButtons.Left) activeBrush = Document.LeftBrush;
 				else if (MouseButtons == MouseButtons.Right) activeBrush = Document.RightBrush;
-
+				//If a mouse button was in use; paint.
 				if (activeBrush != null)
 				{
 					HeightRender render = Document.SelectedRender;
 					PhotonGradient gradient = Document.SelectedGradient;
 					IEnumerable<HeightRender.Effect> effects;
 					if (paintEffectsBox.Checked) effects = Document.SelectedEffects;
-					else effects = null;
+					else effects = null;//If we aren't painting with effects then we don't care about supplying them to the update.
 					#region Process Steps
+					//The brush stroke is broken up into steps that are each a given length (in pixels). The length is denoted by the brush precision.
 					Vector2 brushDelta = lastPointOnRender - pointOnRender;
 					float strokeLength = (float)brushDelta.Length;
 					float steps = strokeLength / activeBrush.Precision + 1;
 					Vector2 brushStep = brushDelta * (1.0f / steps);
-					for (int i = 0; i < steps; i++)
+					for (int i = (int)steps - 1; i >= 0; i--)//Work backwards so the undo function works as intended.
 					{
+						//Calculate the current brush position, based on the starting point, the step vector and the current step index.
 						Vector2 brushPosition = pointOnRender + brushStep * i;
 						#region Process Brush Paint
 						try
 						{
+							//Perform the actual brush operation and capture the selected area it affects.
 							FieldSelection brushArea;
-							activeBrush.Paint(render.HeightField, (int)brushPosition.X, (int)brushPosition.Y, strokeLength, out brushArea);
+							float[] previousData;
+							activeBrush.Paint(render.HeightField, (int)brushPosition.X, (int)brushPosition.Y, strokeLength, out brushArea, out previousData);
+							//Add this paint event to the undo queue.
+							undoStack.Push(new BrushAction(brushArea, previousData));
+							redoStack.Clear();
+							//Break up the brush area into multiple parts if they intersect the edges of the image.
 							foreach (FieldSelection fs in brushArea.SubSelectionsOf(render.HeightField))
 							{
+								//Omit any parts that have a width or height of zero.
 								if (!fs.IsEmpty)
 								{
+									//Update the corresponding part of the render.
 									render.UpdateArea(fs.Left, fs.Top, fs.Width, fs.Height, gradient, effects);
+									//Invalidate the corresponding part of the image panel so that it redraws itself in realtime.
 									Point start = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Left, fs.Top)));
 									Point end = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Right, fs.Bottom)));
 									renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
@@ -219,6 +275,7 @@ namespace Fountain.Forms
 						}
 						catch (Exception ex)
 						{
+							//This usually happens when activeBrush.Paint is called, because it executes the user's brush script. Shows the script error message as a message box.
 							MessageBox.Show(ex.Message, "There was a runtime error with your brush script.");
 						}
 						#endregion
@@ -462,6 +519,91 @@ namespace Fountain.Forms
 			Document.RightBrushName = rightBrushNameBox.Text;
 		}
 
+		private void Undo()
+		{
+			if (undoStack.Count > 0)
+			{
+				BrushAction undoAction = undoStack.Pop();
+				//Set all of the values in the affected area to what they were before the brush action took place.
+				HeightRender render = Document.SelectedRender;
+				BrushAction opposite = new BrushAction(undoAction.Selection, undoAction.Data);
+				for (int x = undoAction.Selection.Left; x < undoAction.Selection.Right; x++)
+				{
+					for (int y = undoAction.Selection.Top; y < undoAction.Selection.Bottom; y++)
+					{
+						float oldSample;
+						if (render.HeightField.TryGetHeight(x, y, out oldSample))
+						{
+							int i = (y - undoAction.Selection.Top) * undoAction.Selection.Width + (x - undoAction.Selection.Left);
+							render.HeightField[x, y] = undoAction.Data[i];
+							opposite.Data[i] = oldSample;
+						}
+					}
+				}
+				PhotonGradient gradient = Document.SelectedGradient;
+				IEnumerable<HeightRender.Effect> effects;
+				if (paintEffectsBox.Checked) effects = Document.SelectedEffects;
+				else effects = null;//Don't worry about effects if we're not painting with them.
+				//Update each section of the selection when wrapping has been accounted for.
+				foreach (FieldSelection fs in undoAction.Selection.SubSelectionsOf(render.HeightField))
+				{
+					//Omit any parts that have a width or height of zero.
+					if (!fs.IsEmpty)
+					{
+						//Update the corresponding part of the render.
+						render.UpdateArea(fs.Left, fs.Top, fs.Width, fs.Height, gradient, effects);
+						//Invalidate the corresponding part of the image panel so that it redraws itself in realtime.
+						Point start = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Left, fs.Top)));
+						Point end = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Right, fs.Bottom)));
+						renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
+					}
+				}
+				redoStack.Push(opposite);
+			}
+		}
+		private void Redo()
+		{
+			if (redoStack.Count > 0)
+			{
+				BrushAction redoAction = redoStack.Pop();
+				//Set all of the values in the affected area to what they were before the undo action took place.
+				HeightRender render = Document.SelectedRender;
+				BrushAction opposite = new BrushAction(redoAction.Selection, redoAction.Data);
+				for (int x = redoAction.Selection.Left; x < redoAction.Selection.Right; x++)
+				{
+					for (int y = redoAction.Selection.Top; y < redoAction.Selection.Bottom; y++)
+					{
+						float oldSample;
+						if (render.HeightField.TryGetHeight(x, y, out oldSample))
+						{
+							int i = (y - redoAction.Selection.Top) * redoAction.Selection.Width + (x - redoAction.Selection.Left);
+							render.HeightField[x, y] = redoAction.Data[i];
+							opposite.Data[i] = oldSample;
+						}
+					}
+				}
+				PhotonGradient gradient = Document.SelectedGradient;
+				IEnumerable<HeightRender.Effect> effects;
+				if (paintEffectsBox.Checked) effects = Document.SelectedEffects;
+				else effects = null;//Don't worry about effects if we're not painting with them.
+				//Update each section of the selection when wrapping has been accounted for.
+				foreach (FieldSelection fs in redoAction.Selection.SubSelectionsOf(render.HeightField))
+				{
+					//Omit any parts that have a width or height of zero.
+					if (!fs.IsEmpty)
+					{
+						//Update the corresponding part of the render.
+						render.UpdateArea(fs.Left, fs.Top, fs.Width, fs.Height, gradient, effects);
+						//Invalidate the corresponding part of the image panel so that it redraws itself in realtime.
+						Point start = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Left, fs.Top)));
+						Point end = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Right, fs.Bottom)));
+						renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
+					}
+				}
+				undoStack.Push(opposite);
+			}
+		}
+
 		private static void HandleFileLoad(string path)
 		{
 			if (path != null)
@@ -496,6 +638,32 @@ namespace Fountain.Forms
 				}
 			}
 			else MessageBox.Show("The supplied path was null.", "File Path Null");
+		}
+
+		private class BrushAction
+		{
+			private FieldSelection selection;
+			public FieldSelection Selection
+			{
+				get
+				{
+					return selection;
+				}
+			}
+			private float[] data;
+			public float[] Data
+			{
+				get
+				{
+					return data;
+				}
+			}
+
+			public BrushAction(FieldSelection selection, float[] data)
+			{
+				this.selection = selection;
+				this.data = data;
+			}
 		}
 	}
 }

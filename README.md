@@ -10,7 +10,6 @@ If you would like to run Fountain on Mac OSX or Linux, download the windows bina
 
 # Known Issues/To Do List
 
-* Undo and Redo functions don't exist yet for painting. I know about this one and it's a real problem so I'm devoting quite a bit of attention to it.
 * Add existing map underlay/overlay to make tracing easier.
 * Add generator scripts.
 * Change file markup so a more extensible format to accomodate changes to document layout.
