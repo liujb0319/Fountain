@@ -340,7 +340,7 @@ To create and use one, just do the following:
 ```
 //Creates a perlin noise generator with a seed of 0, 4 octaves,
 //a frequency of 0.1, a lacunarity of 2.0 and a persistence of 0.5
-NoiseGenerator gen = new PerlinNoise(0, 4, 0.1f, 2.0f, 0.5f);
+NoiseGenerator gen = new PerlinNoise(0, 4, 0.1, 2.0, 0.5);
 //Samples the point x = 10, y = 20 in 2D space.
 //You can do this in 1 and 3 dimensions as well if you need to.
 float sample = gen.Sample(10, 20);
