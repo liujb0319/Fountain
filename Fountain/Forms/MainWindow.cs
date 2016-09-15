@@ -72,19 +72,36 @@ namespace Fountain.Forms
 			Document.SelectedRenderChanged += Document_SelectedRenderChanged;
 			Document.EffectSelected += Document_EffectSelected;
 			Document.EffectDeselected += Document_EffectDeselected;
+			Document.SelectedGradientChanged += Document_SelectedGradientChanged;
+			Document.GeneratorSet += Document_GeneratorSet;
+			Document.GeneratorRemoved += Document_GeneratorRemoved;
 		}
 
+		private void Document_GeneratorRemoved(string name, HeightRender.Generator generator)
+		{
+			generatorNameBox.Items.Clear();
+			foreach (string s in Document.GeneratorNames)
+				generatorNameBox.Items.Add(s);
+		}
+		private void Document_GeneratorSet(string name, HeightRender.Generator generator)
+		{
+			generatorNameBox.Items.Clear();
+			foreach (string s in Document.GeneratorNames)
+				generatorNameBox.Items.Add(s);
+		}
 		private void Document_EffectDeselected(string name)
 		{
 			selectedEffectList.Items.Clear();
 			foreach (string s in Document.SelectedEffectNames)
 				selectedEffectList.Items.Add(s);
+			UpdateRender();
 		}
 		private void Document_EffectSelected(string name)
 		{
 			selectedEffectList.Items.Clear();
 			foreach (string s in Document.SelectedEffectNames)
 				selectedEffectList.Items.Add(s);
+			UpdateRender();
 		}
 		private void Document_SelectedRenderChanged(string name)
 		{
@@ -95,6 +112,7 @@ namespace Fountain.Forms
 				redoQueue.Clear();
 			}
 			else renderArea.Image = null;
+			UpdateRender();
 		}
 		private void Document_BrushRemoved(string name, HeightBrush brush)
 		{
@@ -139,26 +157,50 @@ namespace Fountain.Forms
 		private void Document_GradientRemoved(string name, PhotonGradient gradient)
 		{
 			gradientNameBox.Items.Clear();
+			selectedGradientBox.Items.Clear();
 			foreach (string s in Document.GradientNames)
+			{
 				gradientNameBox.Items.Add(s);
+				selectedGradientBox.Items.Add(s);
+			}
+			selectedGradientBox.SelectedItem = Document.SelectedGradient;
 		}
 		private void Document_GradientSet(string name, PhotonGradient gradient)
 		{
 			gradientNameBox.Items.Clear();
+			selectedGradientBox.Items.Clear();
 			foreach (string s in Document.GradientNames)
+			{
 				gradientNameBox.Items.Add(s);
+				selectedGradientBox.Items.Add(s);
+			}
+			selectedGradientBox.Text = Document.SelectedGradientName;
 		}
 		private void Document_RenderRemoved(string name, HeightRender render)
 		{
 			renderNameBox.Items.Clear();
+			selectedRenderBox.Items.Clear();
 			foreach (string s in Document.RenderNames)
+			{
 				renderNameBox.Items.Add(s);
+				selectedRenderBox.Items.Add(s);
+			}
+			selectedRenderBox.Text = Document.SelectedRenderName;
 		}
 		private void Document_RenderSet(string name, HeightRender render)
 		{
 			renderNameBox.Items.Clear();
+			selectedRenderBox.Items.Clear();
 			foreach (string s in Document.RenderNames)
+			{
 				renderNameBox.Items.Add(s);
+				selectedRenderBox.Items.Add(s);
+			}
+			selectedRenderBox.SelectedItem = Document.SelectedRender;
+		}
+		private void Document_SelectedGradientChanged(string name)
+		{
+			UpdateRender();
 		}
 
 		//Render Area
@@ -186,18 +228,16 @@ namespace Fountain.Forms
 		}
 		private void renderArea_KeyUp(object sender, KeyEventArgs e)
 		{
-			#region Undo
-			if (e.Control && e.KeyCode == Keys.Z)
+			//Undo
+			if (undoing && (e.Control || e.KeyCode == Keys.Z))
 			{
 				undoing = false;
 			}
-			#endregion
-			#region Redo
-			if (e.Control && e.KeyCode == Keys.Y)
+			//Redo
+			if (redoing && (e.Control || e.KeyCode == Keys.Y))
 			{
 				redoing = false;
 			}
-			#endregion
 		}
 		private void renderArea_MouseWheel(object sender, MouseEventArgs e)
 		{
@@ -284,6 +324,7 @@ namespace Fountain.Forms
 				}
 				#endregion
 			}
+			else undoing = redoing = false;
 
 			lastPointOnRenderArea = pointOnRenderArea;
 			lastPointOnRender = pointOnRender;
@@ -331,13 +372,11 @@ namespace Fountain.Forms
 			{
 				if (Document.SetRender(renderNameBox.Text, null))
 				{
-					RenderDialog rd = new RenderDialog(renderNameBox.Text);
+					RenderDialog rd = new RenderDialog(renderNameBox.Text, this);
 					if (rd.ShowDialog() == DialogResult.OK)
 					{
 						Document.SetRender(renderNameBox.Text, new HeightRender(rd.RenderWidth, rd.RenderHeight, rd.RenderClamp, rd.RenderClampMin, rd.RenderClampMax, rd.RenderWrapX, rd.RenderWrapY));
-						Document.SelectedRenderName = renderNameBox.Text;
-						Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
-						renderArea.Invalidate();
+						selectedRenderBox.SelectedItem = Document.GetRender(renderNameBox.Text);
 					}
 					else Document.RemoveRender(renderNameBox.Text);
 				}
@@ -345,25 +384,23 @@ namespace Fountain.Forms
 			}
 			else MessageBox.Show(string.Format("A render named {0} already exists. Type a new name in the box above, or remove the existing render.", renderNameBox.Text), "Naming Conflict");
 		}
-		private void renderNameBox_SelectedIndexChanged(object sender, EventArgs e)
-		{
-			Document.SelectedRenderName = renderNameBox.Text;
-		}
 		private void editRenderToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedRender != null)
+			if (Document.ContainsRender(renderNameBox.Text))
 			{
-				RenderDialog rd = new RenderDialog(Document.SelectedRenderName);
+				RenderDialog rd = new RenderDialog(renderNameBox.Text, this);
 				rd.Show();
 			}
 		}
 		private void clearRenderToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedRender != null && MessageBox.Show("Are you sure you want to clear " + Document.SelectedRenderName + "?", "Clear Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
+			if (Document.SelectedRender != null && MessageBox.Show(string.Format("Are you sure you want to clear {0}? You cannot undo this action.", Document.SelectedRenderName), "Clear Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
 			{
 				Document.SelectedRender.Clear();
 				Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
 				renderArea.Invalidate();
+				undoQueue.Clear();
+				redoQueue.Clear();
 			}
 		}
 		private void exportRenderToolStripMenuItem_Click(object sender, EventArgs e)
@@ -388,6 +425,12 @@ namespace Fountain.Forms
 			if (Document.SelectedRender != null && MessageBox.Show("Are you sure you want to remove " + Document.SelectedRenderName + "?", "Remove Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
 				Document.RemoveRender(Document.SelectedRenderName);
 		}
+		private void selectedRenderBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			Document.SelectedRenderName = selectedRenderBox.Text;
+			Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
+			renderArea.Invalidate();
+		}
 		//Gradients
 		private void gradientNameBox_KeyDown(object sender, KeyEventArgs e)
 		{
@@ -401,36 +444,31 @@ namespace Fountain.Forms
 		{
 			if (!Document.ContainsGradient(gradientNameBox.Text))
 			{
-				PhotonGradient pg = new PhotonGradient(PhotonInterpolationMode.Linear);
-				pg.Add(new Photon(0, 0, 0), 0);
-				pg.Add(new Photon(1, 1, 1), 1);
-				if (Document.SetGradient(gradientNameBox.Text, pg))
+				if (gradientNameBox.Text != null && gradientNameBox.Text.Length > 0)
 				{
-					GradientDialog gd = new GradientDialog(pg);
+					GradientDialog gd = new GradientDialog(gradientNameBox.Text, this);
 					if (gd.ShowDialog() != DialogResult.OK) Document.RemoveGradient(gradientNameBox.Text);
 				}
 				else MessageBox.Show("Please enter a valid name for your gradient in the box above.", "Naming Error");
 			}
 			else MessageBox.Show(string.Format("A gradient named {0} already exists. Type a new name in the box above, or remove the existing gradient.", gradientNameBox.Text), "Naming Conflict");
 		}
-		private void gradientNameBox_SelectedIndexChanged(object sender, EventArgs e)
-		{
-			Document.SelectedGradientName = gradientNameBox.Text;
-		}
 		private void editGradientToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedGradient != null)
+			if (Document.ContainsGradient(gradientNameBox.Text))
 			{
-				GradientDialog gd = new GradientDialog(Document.SelectedGradient.MakeCopy());
-				if (gd.ShowDialog() == DialogResult.OK)
-				{
-					Document.SetGradient(Document.SelectedGradientName, gd.Gradient);
-				}
+				PhotonGradient copy = Document.GetGradient(gradientNameBox.Text).MakeCopy();
+				GradientDialog gd = new GradientDialog(gradientNameBox.Text, this);
+				gd.Show();
 			}
 		}
 		private void removeGradientToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			Document.RemoveGradient(Document.SelectedGradientName);
+			Document.RemoveGradient(gradientNameBox.Text);
+		}
+		private void selectedGradientBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			Document.SelectedGradientName = selectedGradientBox.Text;
 		}
 		//Effects
 		private void effectNameBox_KeyDown(object sender, KeyEventArgs e)
@@ -447,7 +485,7 @@ namespace Fountain.Forms
 			{
 				if (Document.SetEffect(effectNameBox.Text, null))
 				{
-					EffectDialog ed = new EffectDialog(effectNameBox.Text);
+					EffectDialog ed = new EffectDialog(effectNameBox.Text, this);
 					ed.Show();
 				}
 				else MessageBox.Show("Please enter a valid name for your effect in the box above.", "Naming Error");
@@ -458,13 +496,13 @@ namespace Fountain.Forms
 		{
 			if (Document.ContainsEffect(effectNameBox.Text))
 			{
-				EffectDialog ed = new EffectDialog(effectNameBox.Text);
+				EffectDialog ed = new EffectDialog(effectNameBox.Text, this);
 				ed.Show();
 			}
 		}
 		private void removeEffectToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.ContainsBrush(effectNameBox.Text) && MessageBox.Show("Are you sure you want to remove " + effectNameBox.Text + "?", "Remove Effect", MessageBoxButtons.YesNo) == DialogResult.Yes)
+			if (Document.ContainsEffect(effectNameBox.Text) && MessageBox.Show("Are you sure you want to remove " + effectNameBox.Text + "?", "Remove Effect", MessageBoxButtons.YesNo) == DialogResult.Yes)
 				Document.RemoveEffect(effectNameBox.Text);
 		}
 		private void addEffectToolStripMenuItem_Click(object sender, EventArgs e)
@@ -490,7 +528,7 @@ namespace Fountain.Forms
 			{
 				if (Document.SetBrush(brushNameBox.Text, new HeightBrush(64, 64, 1, 8)))
 				{
-					BrushDialog bd = new BrushDialog(brushNameBox.Text);
+					BrushDialog bd = new BrushDialog(brushNameBox.Text, this);
 					bd.Show();
 				}
 				else MessageBox.Show("Please enter a valid name for your brush in the box above.", "Naming Error");
@@ -501,7 +539,7 @@ namespace Fountain.Forms
 		{
 			if (Document.ContainsBrush(brushNameBox.Text))
 			{
-				BrushDialog bd = new BrushDialog(brushNameBox.Text);
+				BrushDialog bd = new BrushDialog(brushNameBox.Text, this);
 				bd.Show();
 			}
 		}
@@ -517,6 +555,72 @@ namespace Fountain.Forms
 		private void rightBrushNameBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			Document.RightBrushName = rightBrushNameBox.Text;
+		}
+		//Generators
+		private void generatorNameBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Return)
+			{
+				newGeneratorToolStripMenuItem_Click(sender, e);
+				e.SuppressKeyPress = true;
+			}
+		}
+		private void newGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsGenerator(generatorNameBox.Text))
+			{
+				if (Document.SetGenerator(generatorNameBox.Text, null))
+				{
+					GeneratorDialog gd = new GeneratorDialog(generatorNameBox.Text, this);
+					gd.Show();
+				}
+				else MessageBox.Show("Please enter a valid name for your generator in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("A generator named {0} already exists. Type a new name in the box above, or remove the existing generator.", generatorNameBox.Text), "Naming Conflict");
+		}
+		private void editGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (Document.ContainsGenerator(generatorNameBox.Text))
+			{
+				GeneratorDialog gd = new GeneratorDialog(generatorNameBox.Text, this);
+				gd.Show();
+			}
+		}
+		private void removeGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (Document.ContainsGenerator(generatorNameBox.Text) && MessageBox.Show("Are you sure you want to remove " + generatorNameBox.Text + "?", "Remove Generator", MessageBoxButtons.YesNo) == DialogResult.Yes)
+				Document.RemoveGenerator(generatorNameBox.Text);
+		}
+		private void applyGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (Document.SelectedRender != null && Document.ContainsGenerator(generatorNameBox.Text))
+			{
+				HeightRender.Generator generator = Document.GetGenerator(generatorNameBox.Text);
+				if (generator != null && MessageBox.Show("Applying a generator will modify or replace the current height map. This action cannot be undone.\n\nWould you like to continue?", "Apply Generator", MessageBoxButtons.YesNo) == DialogResult.Yes)
+				{
+					undoQueue.Clear();
+					redoQueue.Clear();
+					try
+					{
+						HeightField field = Document.SelectedRender.HeightField;
+						for (int u = 0; u < field.Width; u++)
+						{
+							for (int v = 0; v < field.Height; v++)
+							{
+								field[u, v] = (float)generator(u, v, field);
+							}
+						}
+					}
+					catch (Exception ex)
+					{
+						MessageBox.Show(ex.Message, "There was a runtime error with your generator script.");
+					}
+					finally
+					{
+						UpdateRender();
+					}
+				}
+			}
 		}
 
 		private void Undo()
@@ -601,6 +705,25 @@ namespace Fountain.Forms
 					}
 				}
 				undoQueue.Enqueue(opposite);
+			}
+		}
+		private void UpdateRender()
+		{
+			if (Document.SelectedRender != null)
+			{
+				try
+				{
+					Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
+				}
+				catch (Exception e)
+				{
+					//This usually happens when Apply is called, because it executes the user's effect script. Shows the script error message as a message box.
+					MessageBox.Show(e.Message, "There was a runtime error with one of your effect scripts.");
+				}
+				finally
+				{
+					renderArea.Invalidate();
+				}
 			}
 		}
 

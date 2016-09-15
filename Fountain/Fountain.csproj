@@ -129,6 +129,12 @@
     <Compile Include="Forms\BrushDialog.Designer.cs">
       <DependentUpon>BrushDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\GeneratorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\GeneratorDialog.Designer.cs">
+      <DependentUpon>GeneratorDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\EffectDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -182,6 +188,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\BrushDialog.resx">
       <DependentUpon>BrushDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\GeneratorDialog.resx">
+      <DependentUpon>GeneratorDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\EffectDialog.resx">
       <DependentUpon>EffectDialog.cs</DependentUpon>
