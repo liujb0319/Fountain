@@ -300,17 +300,17 @@ Photons are a simple little structures that denote colors. They contain a value 
 Photons can be made by doing the following:
 
 ```
-Photon white = new Photon(1.0f, 1.0f, 1.0f, 1.0f);
-Photon red = new Photon(1.0f, 0.0f, 0.0f, 1.0f);
-Photon yellow = new Photon(1.0f, 1.0f, 0.0f, 1.0f);
-Photon transparent = new Photon(0.0f, 0.0f, 0.0f, 0.0f);
+Photon white = new Photon(1.0, 1.0, 1.0, 1.0);
+Photon red = new Photon(1.0, 0.0, 0.0, 1.0);
+Photon yellow = new Photon(1.0, 1.0, 0.0, 1.0);
+Photon transparent = new Photon(0.0, 0.0, 0.0, 0.0);
 ```
 
 They can be added together (so adding _red_ to _blue_ will yield a Photon that denotes purple), multiplied together (color burn), multiplied by a number (increasing or decreasing brightness) and subtracted from one-another:
 
 ```
-Photon red = new Photon(1.0f, 0.0f, 0.0f, 1.0f);
-Photon blue = new Photon(0.0f, 0.0f, 1.0f, 1.0f);
+Photon red = new Photon(1.0, 0.0, 0.0, 1.0);
+Photon blue = new Photon(0.0, 0.0, 1.0, 1.0);
 Photon purple = red + blue;
 Photon black = red * blue; //Because the parts will be multiplied together; meaning they will all end up being zero.
 ```
@@ -318,11 +318,11 @@ Photon black = red * blue; //Because the parts will be multiplied together; mean
 They can also be interpolated between using _Photon.InterpolateCubic_ and _Photon.InterpolateLinear_ like so:
 
 ```
-Photon black = new Photon(0.0f, 0.0f, 0.0f, 1.0f);
-Photon white = new Photon(1.0f, 1.0f, 1.0f, 1.0f);
-Photon darkGray = Photon.InterpolateLinear(black, white, 0.2f);
-Photon gray = Photon.InterpolateLinear(black, white, 0.5f);
-Photon lightGray = Photon.InterpolateLinear(black, white, 0.8f);
+Photon black = new Photon(0.0, 0.0, 0.0, 1.0);
+Photon white = new Photon(1.0, 1.0, 1.0, 1.0);
+Photon darkGray = Photon.InterpolateLinear(black, white, 0.2);
+Photon gray = Photon.InterpolateLinear(black, white, 0.5);
+Photon lightGray = Photon.InterpolateLinear(black, white, 0.8);
 ```
 
 ### Noise Generators
