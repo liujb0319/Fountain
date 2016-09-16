@@ -85,13 +85,13 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="LlewellynMath">
-      <HintPath>UnmanagedPackages\LlewellynMath.dll</HintPath>
+      <HintPath>lib\LlewellynMath.dll</HintPath>
     </Reference>
     <Reference Include="LlewellynMedia">
-      <HintPath>UnmanagedPackages\LlewellynMedia.dll</HintPath>
+      <HintPath>lib\LlewellynMedia.dll</HintPath>
     </Reference>
     <Reference Include="LlewellynScripting">
-      <HintPath>UnmanagedPackages\LlewellynScripting.dll</HintPath>
+      <HintPath>lib\LlewellynScripting.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
