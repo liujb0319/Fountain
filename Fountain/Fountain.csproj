@@ -213,12 +213,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="UnmanagedPackages\LlewellynMath.dll" />
-    <None Include="UnmanagedPackages\LlewellynMath.pdb" />
-    <None Include="UnmanagedPackages\LlewellynMedia.dll" />
-    <None Include="UnmanagedPackages\LlewellynMedia.pdb" />
-    <None Include="UnmanagedPackages\LlewellynScripting.dll" />
-    <None Include="UnmanagedPackages\LlewellynScripting.pdb" />
     <None Include="Resources\Tutorial Samples.fdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -249,9 +243,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="UnmanagedPackages\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
