@@ -22,6 +22,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -110,8 +111,13 @@ namespace Fountain.Forms
 				renderArea.Image = Document.SelectedRender.Bitmap;
 				undoQueue.Clear();
 				redoQueue.Clear();
+				selectedRenderBox.Text = name;
 			}
-			else renderArea.Image = null;
+			else
+			{
+				renderArea.Image = null;
+				selectedRenderBox.Text = "";
+			}
 			UpdateRender();
 		}
 		private void Document_BrushRemoved(string name, HeightBrush brush)
@@ -376,7 +382,7 @@ namespace Fountain.Forms
 					if (rd.ShowDialog() == DialogResult.OK)
 					{
 						Document.SetRender(renderNameBox.Text, new HeightRender(rd.RenderWidth, rd.RenderHeight, rd.RenderClamp, rd.RenderClampMin, rd.RenderClampMax, rd.RenderWrapX, rd.RenderWrapY));
-						selectedRenderBox.SelectedItem = Document.GetRender(renderNameBox.Text);
+						Document.SelectedRenderName = renderNameBox.Text;
 					}
 					else Document.RemoveRender(renderNameBox.Text);
 				}
@@ -422,8 +428,8 @@ namespace Fountain.Forms
 		}
 		private void removeRenderToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedRender != null && MessageBox.Show("Are you sure you want to remove " + Document.SelectedRenderName + "?", "Remove Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
-				Document.RemoveRender(Document.SelectedRenderName);
+			if (Document.ContainsRender(renderNameBox.Text) != null && MessageBox.Show("Are you sure you want to remove " + renderNameBox.Text + "?", "Remove Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
+				Document.RemoveRender(renderNameBox.Text);
 		}
 		private void selectedRenderBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
@@ -598,26 +604,29 @@ namespace Fountain.Forms
 				HeightRender.Generator generator = Document.GetGenerator(generatorNameBox.Text);
 				if (generator != null && MessageBox.Show("Applying a generator will modify or replace the current height map. This action cannot be undone.\n\nWould you like to continue?", "Apply Generator", MessageBoxButtons.YesNo) == DialogResult.Yes)
 				{
-					undoQueue.Clear();
-					redoQueue.Clear();
-					try
+					lock (undoQueue) undoQueue.Clear();
+					lock (redoQueue) redoQueue.Clear();
+					HeightField field = Document.SelectedRender.HeightField;
+					lock (field)
 					{
-						HeightField field = Document.SelectedRender.HeightField;
-						for (int u = 0; u < field.Width; u++)
+						try
 						{
-							for (int v = 0; v < field.Height; v++)
+							for (int u = 0; u < field.Width; u++)
 							{
-								field[u, v] = (float)generator(u, v, field);
+								for (int v = 0; v < field.Height; v++)
+								{
+									field[u, v] = (float)generator(u, v, field);
+								}
 							}
 						}
-					}
-					catch (Exception ex)
-					{
-						MessageBox.Show(ex.Message, "There was a runtime error with your generator script.");
-					}
-					finally
-					{
-						UpdateRender();
+						catch (Exception ex)
+						{
+							MessageBox.Show(ex.Message, "There was a runtime error with your generator script.");
+						}
+						finally
+						{
+							UpdateRender();
+						}
 					}
 				}
 			}
