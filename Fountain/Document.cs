@@ -20,7 +20,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Reflection;
+using System.Drawing;
 
+using LlewellynMath;
+using LlewellynMath.NoiseGenerators;
 using LlewellynMedia;
 using LlewellynScripting;
 
@@ -60,7 +64,7 @@ namespace Fountain
 		//Setting
 		public static bool SetRender(string name, HeightRender render)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
 				renders[name] = render;
 				if (renderSet != null) renderSet(name, render);
@@ -174,7 +178,7 @@ namespace Fountain
 		//Setting
 		public static bool SetGradient(string name, PhotonGradient gradient)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
 				gradients[name] = gradient;
 				if (gradientSet != null) gradientSet(name, gradient);
@@ -294,9 +298,13 @@ namespace Fountain
 		//Setting
 		public static bool SetEffect(string name, HeightRender.Effect effect, CSScript script = null)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
-				if (script == null) script = new CSScript();
+				if (script == null)
+				{
+					script = new CSScript();
+					script.Source = "Photon Apply(int x, int y, Photon color, HeightField heightField)\r\n{\r\n\t//Your code goes here\r\n}";
+				}
 				EffectScript es;
 				if (!effects.TryGetValue(name, out es)) es = new EffectScript() { effect = effect, script = script };
 				else es.effect = effect;
@@ -459,9 +467,13 @@ namespace Fountain
 		//Setting
 		public static bool SetBrush(string name, HeightBrush brush, CSScript script = null)
 		{
-			if (name != null)
+			if (name != null && name.Length > 0)
 			{
-				if (script == null) script = new CSScript();
+				if (script == null)
+				{
+					script = new CSScript();
+					script.Source = "double Sample(int x, int y, double intensity, int left, int right, int top, int bottom)\r\n{\r\n\t//Your code goes here\r\n}\r\ndouble Blend(double baseValue, double newValue)\r\n{\r\n\t//Your code goes here\r\n}";
+				}
 				BrushScript bs;
 				if (!brushes.TryGetValue(name, out bs)) bs = new BrushScript() { brush = brush, script = script };
 				else bs.brush = brush;
@@ -587,6 +599,105 @@ namespace Fountain
 			public CSScript script;
 		}
 		#endregion
+		#region Generators
+		private static Dictionary<string, GeneratorScript> generators = new Dictionary<string, GeneratorScript>();
+		public static IEnumerable<string> GeneratorNames
+		{
+			get
+			{
+				return generators.Keys;
+			}
+		}
+		public static IEnumerable<HeightRender.Generator> Generators
+		{
+			get
+			{
+				foreach (GeneratorScript gs in generators.Values)
+					yield return gs.generator;
+			}
+		}
+		//Getting
+		public static HeightRender.Generator GetGenerator(string name)
+		{
+			GeneratorScript gs;
+			if (name != null && generators.TryGetValue(name, out gs)) return gs.generator;
+			else return null;
+		}
+		public static CSScript GetGeneratorScript(string name)
+		{
+			GeneratorScript gs;
+			if (name != null && generators.TryGetValue(name, out gs)) return gs.script;
+			else return null;
+		}
+		public static bool ContainsGenerator(string name)
+		{
+			return generators.ContainsKey(name);
+		}
+		//Setting
+		public static bool SetGenerator(string name, HeightRender.Generator generator, CSScript script = null)
+		{
+			if (name != null && name.Length > 0)
+			{
+				if (script == null)
+				{
+					script = new CSScript();
+					script.Source = "double Generate(int x, int y, HeightField heightField)\r\n{\r\n\t//Your code goes here\r\n}";
+				}
+				GeneratorScript gs;
+				if (!generators.TryGetValue(name, out gs)) gs = new GeneratorScript() { generator = generator, script = script };
+				else gs.generator = generator;
+				generators[name] = gs;
+				if (generatorSet != null) generatorSet(name, gs.generator);
+				return true;
+			}
+			else return false;
+		}
+		private static OnGeneratorSet generatorSet;
+		public static event OnGeneratorSet GeneratorSet
+		{
+			add
+			{
+				generatorSet += value;
+			}
+			remove
+			{
+				generatorSet -= value;
+			}
+		}
+		//Removing
+		public static bool RemoveGenerator(string name)
+		{
+			GeneratorScript gs;
+			if (generators.TryGetValue(name, out gs))
+			{
+				generators.Remove(name);
+				if (generatorRemoved != null) generatorRemoved(name, gs.generator);
+				return true;
+			}
+			else return false;
+		}
+		private static OnGeneratorRemoved generatorRemoved;
+		public static event OnGeneratorRemoved GeneratorRemoved
+		{
+			add
+			{
+				generatorRemoved += value;
+			}
+			remove
+			{
+				generatorRemoved -= value;
+			}
+		}
+
+		public delegate void OnGeneratorSet(string name, HeightRender.Generator generator);
+		public delegate void OnGeneratorRemoved(string name, HeightRender.Generator generator);
+
+		private struct GeneratorScript
+		{
+			public HeightRender.Generator generator;
+			public CSScript script;
+		}
+		#endregion
 		#region IO
 		private static string associatedPath;
 		public static string AssociatedPath
@@ -600,7 +711,7 @@ namespace Fountain
 		{
 			get
 			{
-				return renders.Count == 0 && gradients.Count == 0 && effects.Count == 0 && brushes.Count == 0;
+				return renders.Count == 0 && gradients.Count == 0 && effects.Count == 0 && brushes.Count == 0 && generators.Count == 0;
 			}
 		}
 		public static void Clear()
@@ -618,6 +729,9 @@ namespace Fountain
 			names = brushes.Keys.ToArray();
 			foreach (string name in names)
 				RemoveBrush(name);
+			names = generators.Keys.ToArray();
+			foreach (string name in names)
+				RemoveGenerator(name);
 			associatedPath = null;
 			if (cleared != null) cleared();
 		}
@@ -635,61 +749,82 @@ namespace Fountain
 			}
 		}
 		//Loading
-		public static bool Load(string path)
+		public static IOEvaluation Load(string path)
 		{
 			Clear();
 			if (File.Exists(path))
 			{
-				FileStream stream = new FileStream(path, FileMode.Open);
+				FileStream stream = null;
 				try
 				{
-					byte[] countBuf = new byte[4];
-					int count;
-					//Load Renders
-					stream.Read(countBuf, 0, sizeof(int));
-					count = BitConverter.ToInt32(countBuf, 0);
-					for (int i = 0; i < count; i++)
-					{
-						string name = LoadText(stream);
-						HeightRender render = LoadRender(stream);
-						SetRender(name, render);
-					}
-					//Load Gradients
-					stream.Read(countBuf, 0, sizeof(int));
-					count = BitConverter.ToInt32(countBuf, 0);
-					for (int i = 0; i < count; i++)
-					{
-						string name = LoadText(stream);
-						PhotonGradient gradient = LoadGradient(stream);
-						SetGradient(name, gradient);
-					}
-					//Load Effects
-					stream.Read(countBuf, 0, sizeof(int));
-					count = BitConverter.ToInt32(countBuf, 0);
-					for (int i = 0; i < count; i++)
-					{
-						string name = LoadText(stream);
-						EffectScript es = LoadEffect(stream);
-						SetEffect(name, es.effect, es.script);
-					}
-					//Load Brushes
-					stream.Read(countBuf, 0, sizeof(int));
-					count = BitConverter.ToInt32(countBuf, 0);
-					for (int i = 0; i < count; i++)
-					{
-						string name = LoadText(stream);
-						BrushScript bs = LoadBrush(stream);
-						SetBrush(name, bs.brush, bs.script);
-					}
-					//Path and Callback
-					associatedPath = path;
-					if (loaded != null) loaded(path);
-					return true;
+					stream = new FileStream(path, FileMode.Open);
 				}
 				catch
 				{
-					associatedPath = null;
-					return false;
+					return IOEvaluation.CannotOpenStream;
+				}
+				try
+				{
+					IOBlockIdentifier block;
+					string blockName;
+					byte[] blockBuff = new byte[sizeof(int)];
+					stream.Read(blockBuff, 0, sizeof(int));
+					block = (IOBlockIdentifier)BitConverter.ToInt32(blockBuff, 0);
+					if (block == IOBlockIdentifier.FileBegin)
+					{
+						do
+						{
+							if (stream.Position < stream.Length)
+							{
+								stream.Read(blockBuff, 0, sizeof(int));
+								block = (IOBlockIdentifier)BitConverter.ToInt32(blockBuff, 0);
+								switch (block)
+								{
+									case IOBlockIdentifier.FileEnd:
+										break;
+									case IOBlockIdentifier.Brush:
+										blockName = LoadText(stream);
+										BrushScript bs = LoadBrush(stream);
+										SetBrush(blockName, bs.brush, bs.script);
+										break;
+									case IOBlockIdentifier.Effect:
+										blockName = LoadText(stream);
+										EffectScript es = LoadEffect(stream);
+										SetEffect(blockName, es.effect, es.script);
+										break;
+									case IOBlockIdentifier.Gradient:
+										blockName = LoadText(stream);
+										PhotonGradient gradient = LoadGradient(stream);
+										SetGradient(blockName, gradient);
+										break;
+									case IOBlockIdentifier.Render:
+										blockName = LoadText(stream);
+										HeightRender render = LoadRender(stream);
+										SetRender(blockName, render);
+										break;
+									case IOBlockIdentifier.Generator:
+										blockName = LoadText(stream);
+										GeneratorScript gs = LoadGenerator(stream);
+										SetGenerator(blockName, gs.generator, gs.script);
+										break;
+									default:
+										throw new Exception("Encountered a block that couldn't be identified.");
+								}
+							}
+							else throw new Exception("The end of the file was reached before the appropriate 'End of File' flag was found.");
+						}
+						while (block != IOBlockIdentifier.FileEnd);
+						//Path and Callback
+						associatedPath = path;
+						if (loaded != null) loaded(path);
+						return IOEvaluation.Success;
+					}
+					else return IOEvaluation.ConversionError;
+				}
+				catch
+				{
+					Clear();
+					return IOEvaluation.ConversionError;
 				}
 				finally
 				{
@@ -699,7 +834,7 @@ namespace Fountain
 			else
 			{
 				associatedPath = path;
-				return false;
+				return IOEvaluation.FileDoesNotExist;
 			}
 		}
 		private static OnLoaded loaded;
@@ -716,7 +851,7 @@ namespace Fountain
 		}
 		private static string LoadText(Stream stream)
 		{
-			byte[] sizBuff = new byte[4];
+			byte[] sizBuff = new byte[sizeof(int)];
 			stream.Read(sizBuff, 0, sizeof(int));
 			int size = BitConverter.ToInt32(sizBuff, 0);
 			byte[] texBuff = new byte[size];
@@ -725,7 +860,7 @@ namespace Fountain
 		}
 		private static HeightRender LoadRender(Stream stream)
 		{
-			byte[] buffer = new byte[4];
+			byte[] buffer = new byte[sizeof(int)];
 
 			stream.Read(buffer, 0, sizeof(int));
 			int width = BitConverter.ToInt32(buffer, 0);
@@ -748,6 +883,7 @@ namespace Fountain
 				stream.Read(buffer, 0, sizeof(float));
 				render.HeightField.Data[i] = BitConverter.ToSingle(buffer, 0);
 			}
+			render.UpdateAll(null, null);
 
 			return render;
 		}
@@ -774,8 +910,14 @@ namespace Fountain
 		}
 		private static EffectScript LoadEffect(Stream stream)
 		{
-			EffectScript es = new EffectScript() { effect = null, script = new CSScript() };
-			es.script.Source = LoadText(stream);
+			CSScript script = new CSScript();
+			script.Source = LoadText(stream);
+			HeightRender.Effect effect;
+			string errors;
+			HeightRender.CompileEffect(script, out effect, out errors);
+
+			EffectScript es = new EffectScript() { effect = effect, script = script };
+
 			return es;
 		}
 		private static BrushScript LoadBrush(Stream stream)
@@ -791,54 +933,91 @@ namespace Fountain
 			stream.Read(buffer, 0, sizeof(int));
 			int precision = BitConverter.ToInt32(buffer, 0);
 
-			BrushScript bs = new BrushScript() { brush = new HeightBrush(width, height, power, precision), script = new CSScript() };
-			bs.script.Source = LoadText(stream);
+			CSScript script = new CSScript();
+			script.Source = LoadText(stream);
+			HeightBrush.SampleFunction sample;
+			HeightBrush.BlendFunction blend;
+			string errors;
+			HeightBrush.CompileFunctions(script, out sample, out blend, out errors);
+
+			BrushScript bs = new BrushScript() { brush = new HeightBrush(width, height, power, precision, sample, blend), script = script };
 
 			return bs;
 		}
-		//Saving
-		public static bool Save(string path)
+		private static GeneratorScript LoadGenerator(Stream stream)
 		{
-			FileStream stream = new FileStream(path, FileMode.Create);
+			CSScript script = new CSScript();
+			script.Source = LoadText(stream);
+			HeightRender.Generator generator;
+			string errors;
+			HeightRender.CompileGenerator(script, out generator, out errors);
+
+			GeneratorScript gs = new GeneratorScript() { generator = generator, script = script };
+
+			return gs;
+		}
+		//Saving
+		public static IOEvaluation Save(string path)
+		{
+			FileStream stream = null;
 			try
 			{
+				stream = new FileStream(path, FileMode.Create);
+			}
+			catch
+			{
+				return IOEvaluation.CannotOpenStream;
+			}
+			try
+			{
+				//File Begin
+				stream.Write(BitConverter.GetBytes((int)IOBlockIdentifier.FileBegin), 0, sizeof(int));
 				//Save Renders
-				stream.Write(BitConverter.GetBytes(renders.Count), 0, sizeof(int));
 				foreach (string name in RenderNames)
 				{
+					stream.Write(BitConverter.GetBytes((int)IOBlockIdentifier.Render), 0, sizeof(int));
 					SaveText(stream, name);
 					SaveRender(stream, renders[name]);
 				}
 				//Save Gradients
-				stream.Write(BitConverter.GetBytes(gradients.Count), 0, sizeof(int));
 				foreach (string name in GradientNames)
 				{
+					stream.Write(BitConverter.GetBytes((int)IOBlockIdentifier.Gradient), 0, sizeof(int));
 					SaveText(stream, name);
 					SaveGradient(stream, gradients[name]);
 				}
 				//Save Effects
-				stream.Write(BitConverter.GetBytes(effects.Count), 0, sizeof(int));
 				foreach (string name in EffectNames)
 				{
+					stream.Write(BitConverter.GetBytes((int)IOBlockIdentifier.Effect), 0, sizeof(int));
 					SaveText(stream, name);
 					SaveEffect(stream, effects[name]);
 				}
 				//Save Brushes
-				stream.Write(BitConverter.GetBytes(brushes.Count), 0, sizeof(int));
 				foreach (string name in BrushNames)
 				{
+					stream.Write(BitConverter.GetBytes((int)IOBlockIdentifier.Brush), 0, sizeof(int));
 					SaveText(stream, name);
 					SaveBrush(stream, brushes[name]);
 				}
+				//Save Generators
+				foreach (string name in GeneratorNames)
+				{
+					stream.Write(BitConverter.GetBytes((int)IOBlockIdentifier.Generator), 0, sizeof(int));
+					SaveText(stream, name);
+					SaveGenerator(stream, generators[name]);
+				}
+				//File End
+				stream.Write(BitConverter.GetBytes((int)IOBlockIdentifier.FileEnd), 0, sizeof(int));
 				//Path and Callback
 				associatedPath = path;
 				if (saved != null) saved(path);
-				return true;
+				return IOEvaluation.Success;
 			}
 			catch
 			{
 				associatedPath = null;
-				return false;
+				return IOEvaluation.ConversionError;
 			}
 			finally
 			{
@@ -897,10 +1076,17 @@ namespace Fountain
 			stream.Write(BitConverter.GetBytes(brush.brush.Precision), 0, sizeof(int));
 			SaveText(stream, brush.script.Source);
 		}
+		private static void SaveGenerator(Stream stream, GeneratorScript generator)
+		{
+			SaveText(stream, generator.script.Source);
+		}
 
 		public delegate void OnCleared();
 		public delegate void OnLoaded(string path);
 		public delegate void OnSaved(string path);
+		
+		public enum IOBlockIdentifier { FileBegin = 22623, FileEnd = 99157, Render = 66547, Gradient = 89722, Effect = 12744, Brush = 63488, Generator = 11954 }
+		public enum IOEvaluation { FileDoesNotExist = 0, CannotOpenStream = 1, ConversionError = 2, Success = 3 }
 		#endregion
 	}
 }

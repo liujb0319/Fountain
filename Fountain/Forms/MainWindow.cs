@@ -22,6 +22,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -36,6 +37,10 @@ namespace Fountain.Forms
 {
 	public partial class MainWindow : Form
 	{
+		private bool undoing;
+		private ActionQueue undoQueue = new ActionQueue(2048);
+		private bool redoing;
+		private ActionQueue redoQueue = new ActionQueue(2048);
 		private Vector2 lastPointOnRenderArea;
 		private Vector2 lastPointOnRender;
 
@@ -52,7 +57,7 @@ namespace Fountain.Forms
 		{
 			CenterToScreen();
 			InitializeComponent();
-			if (filePath != null && !Document.Load(filePath)) MessageBox.Show("The file at " + filePath + " could not be loaded.", "File Parsing Error");
+			if (filePath != null) HandleFileLoad(filePath);
 
 			renderArea.MouseWheel += renderArea_MouseWheel;
 			Application.Idle += Application_Idle;
@@ -68,24 +73,52 @@ namespace Fountain.Forms
 			Document.SelectedRenderChanged += Document_SelectedRenderChanged;
 			Document.EffectSelected += Document_EffectSelected;
 			Document.EffectDeselected += Document_EffectDeselected;
+			Document.SelectedGradientChanged += Document_SelectedGradientChanged;
+			Document.GeneratorSet += Document_GeneratorSet;
+			Document.GeneratorRemoved += Document_GeneratorRemoved;
 		}
 
+		private void Document_GeneratorRemoved(string name, HeightRender.Generator generator)
+		{
+			generatorNameBox.Items.Clear();
+			foreach (string s in Document.GeneratorNames)
+				generatorNameBox.Items.Add(s);
+		}
+		private void Document_GeneratorSet(string name, HeightRender.Generator generator)
+		{
+			generatorNameBox.Items.Clear();
+			foreach (string s in Document.GeneratorNames)
+				generatorNameBox.Items.Add(s);
+		}
 		private void Document_EffectDeselected(string name)
 		{
 			selectedEffectList.Items.Clear();
 			foreach (string s in Document.SelectedEffectNames)
 				selectedEffectList.Items.Add(s);
+			UpdateRender();
 		}
 		private void Document_EffectSelected(string name)
 		{
 			selectedEffectList.Items.Clear();
 			foreach (string s in Document.SelectedEffectNames)
 				selectedEffectList.Items.Add(s);
+			UpdateRender();
 		}
 		private void Document_SelectedRenderChanged(string name)
 		{
-			if (Document.SelectedRender != null) renderArea.Image = Document.SelectedRender.Bitmap;
-			else renderArea.Image = null;
+			if (Document.SelectedRender != null)
+			{
+				renderArea.Image = Document.SelectedRender.Bitmap;
+				undoQueue.Clear();
+				redoQueue.Clear();
+				selectedRenderBox.Text = name;
+			}
+			else
+			{
+				renderArea.Image = null;
+				selectedRenderBox.Text = "";
+			}
+			UpdateRender();
 		}
 		private void Document_BrushRemoved(string name, HeightBrush brush)
 		{
@@ -130,35 +163,86 @@ namespace Fountain.Forms
 		private void Document_GradientRemoved(string name, PhotonGradient gradient)
 		{
 			gradientNameBox.Items.Clear();
+			selectedGradientBox.Items.Clear();
 			foreach (string s in Document.GradientNames)
+			{
 				gradientNameBox.Items.Add(s);
+				selectedGradientBox.Items.Add(s);
+			}
+			selectedGradientBox.SelectedItem = Document.SelectedGradient;
 		}
 		private void Document_GradientSet(string name, PhotonGradient gradient)
 		{
 			gradientNameBox.Items.Clear();
+			selectedGradientBox.Items.Clear();
 			foreach (string s in Document.GradientNames)
+			{
 				gradientNameBox.Items.Add(s);
+				selectedGradientBox.Items.Add(s);
+			}
+			selectedGradientBox.Text = Document.SelectedGradientName;
 		}
 		private void Document_RenderRemoved(string name, HeightRender render)
 		{
 			renderNameBox.Items.Clear();
+			selectedRenderBox.Items.Clear();
 			foreach (string s in Document.RenderNames)
+			{
 				renderNameBox.Items.Add(s);
+				selectedRenderBox.Items.Add(s);
+			}
+			selectedRenderBox.Text = Document.SelectedRenderName;
 		}
 		private void Document_RenderSet(string name, HeightRender render)
 		{
 			renderNameBox.Items.Clear();
+			selectedRenderBox.Items.Clear();
 			foreach (string s in Document.RenderNames)
+			{
 				renderNameBox.Items.Add(s);
+				selectedRenderBox.Items.Add(s);
+			}
+			selectedRenderBox.SelectedItem = Document.SelectedRender;
+		}
+		private void Document_SelectedGradientChanged(string name)
+		{
+			UpdateRender();
 		}
 
 		//Render Area
 		private void renderArea_KeyDown(object sender, KeyEventArgs e)
 		{
+			#region Reset Zoom and Pan
 			if (e.KeyCode == Keys.Space)
 			{
 				renderArea.ImageScale = Vector2.One;
 				renderArea.ImageOffset = Vector2.Zero;
+			}
+			#endregion
+			#region Undo
+			if (e.Control && e.KeyCode == Keys.Z)
+			{
+				undoing = true;
+			}
+			#endregion
+			#region Redo
+			if (e.Control && e.KeyCode == Keys.Y)
+			{
+				redoing = true;
+			}
+			#endregion
+		}
+		private void renderArea_KeyUp(object sender, KeyEventArgs e)
+		{
+			//Undo
+			if (undoing && (e.Control || e.KeyCode == Keys.Z))
+			{
+				undoing = false;
+			}
+			//Redo
+			if (redoing && (e.Control || e.KeyCode == Keys.Y))
+			{
+				redoing = false;
 			}
 		}
 		private void renderArea_MouseWheel(object sender, MouseEventArgs e)
@@ -175,6 +259,12 @@ namespace Fountain.Forms
 
 			if (renderArea.Focused && Document.SelectedRender != null)
 			{
+				#region Undo
+				if (undoing) Undo();
+				#endregion
+				#region Redo
+				if (redoing) Redo();
+				#endregion
 				#region Panning
 				if (MouseButtons == MouseButtons.Middle)
 				{
@@ -182,35 +272,47 @@ namespace Fountain.Forms
 				}
 				#endregion
 				#region Brush
+				//Select the appropriate brush based on the active mouse buttons.
 				HeightBrush activeBrush = null;
 				if (MouseButtons == MouseButtons.Left) activeBrush = Document.LeftBrush;
 				else if (MouseButtons == MouseButtons.Right) activeBrush = Document.RightBrush;
-
+				//If a mouse button was in use; paint.
 				if (activeBrush != null)
 				{
 					HeightRender render = Document.SelectedRender;
 					PhotonGradient gradient = Document.SelectedGradient;
 					IEnumerable<HeightRender.Effect> effects;
 					if (paintEffectsBox.Checked) effects = Document.SelectedEffects;
-					else effects = null;
+					else effects = null;//If we aren't painting with effects then we don't care about supplying them to the update.
 					#region Process Steps
+					//The brush stroke is broken up into steps that are each a given length (in pixels). The length is denoted by the brush precision.
 					Vector2 brushDelta = lastPointOnRender - pointOnRender;
 					float strokeLength = (float)brushDelta.Length;
 					float steps = strokeLength / activeBrush.Precision + 1;
 					Vector2 brushStep = brushDelta * (1.0f / steps);
-					for (int i = 0; i < steps; i++)
+					for (int i = (int)steps - 1; i >= 0; i--)//Work backwards so the undo and redo functionality makes sense.
 					{
+						//Calculate the current brush position, based on the starting point, the step vector and the current step index.
 						Vector2 brushPosition = pointOnRender + brushStep * i;
 						#region Process Brush Paint
 						try
 						{
+							//Perform the actual brush operation and capture the selected area it affects.
 							FieldSelection brushArea;
-							activeBrush.Paint(render.HeightField, (int)brushPosition.X, (int)brushPosition.Y, strokeLength, out brushArea);
+							float[] previousData;
+							activeBrush.Paint(render.HeightField, (int)brushPosition.X, (int)brushPosition.Y, strokeLength, out brushArea, out previousData);
+							//Add this paint event to the undo queue.
+							undoQueue.Enqueue(new BrushAction(brushArea, previousData));
+							redoQueue.Clear();
+							//Break up the brush area into multiple parts if they intersect the edges of the image.
 							foreach (FieldSelection fs in brushArea.SubSelectionsOf(render.HeightField))
 							{
+								//Omit any parts that have a width or height of zero.
 								if (!fs.IsEmpty)
 								{
+									//Update the corresponding part of the render.
 									render.UpdateArea(fs.Left, fs.Top, fs.Width, fs.Height, gradient, effects);
+									//Invalidate the corresponding part of the image panel so that it redraws itself in realtime.
 									Point start = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Left, fs.Top)));
 									Point end = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Right, fs.Bottom)));
 									renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
@@ -219,6 +321,7 @@ namespace Fountain.Forms
 						}
 						catch (Exception ex)
 						{
+							//This usually happens when activeBrush.Paint is called, because it executes the user's brush script. Shows the script error message as a message box.
 							MessageBox.Show(ex.Message, "There was a runtime error with your brush script.");
 						}
 						#endregion
@@ -227,6 +330,7 @@ namespace Fountain.Forms
 				}
 				#endregion
 			}
+			else undoing = redoing = false;
 
 			lastPointOnRenderArea = pointOnRenderArea;
 			lastPointOnRender = pointOnRender;
@@ -243,64 +347,66 @@ namespace Fountain.Forms
 			{
 				openFileDialog.Filter = "Fountain Document (*.fdf)|*.fdf";
 				openFileDialog.FileName = Document.AssociatedPath;
-				if (openFileDialog.ShowDialog() == DialogResult.OK && !Document.Load(openFileDialog.FileName))
-					MessageBox.Show("The file at " + openFileDialog.FileName + " could not be loaded.", "File Parsing Error");
+				if (openFileDialog.ShowDialog() == DialogResult.OK) HandleFileLoad(openFileDialog.FileName);
 			}
 		}
 		private void saveDocumentToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			if (Document.AssociatedPath != null)
 			{
-				if (!Document.Save(Document.AssociatedPath))
-					MessageBox.Show("There was an error saving the file to " + Document.AssociatedPath + ".", "File Parsing Error");
+				HandleFileSave(Document.AssociatedPath);
 			}
 			else saveDocumentAsToolStripMenuItem_Click(sender, e);
 		}
 		private void saveDocumentAsToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			saveFileDialog.Filter = "Fountain Document (*.fdf)|*.fdf";
-			if (saveFileDialog.ShowDialog() == DialogResult.OK && !Document.Save(saveFileDialog.FileName))
-				MessageBox.Show("There was an error saving the file to " + saveFileDialog.FileName + ".", "File Parsing Error");
+			if (saveFileDialog.ShowDialog() == DialogResult.OK) HandleFileSave(saveFileDialog.FileName);
 		}
 		//Renders
 		private void renderNameBox_KeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsRender(renderNameBox.Text))
-				{
-					RenderDialog rd = new RenderDialog(renderNameBox.Text);
-					if (rd.ShowDialog() == DialogResult.OK)
-						if (Document.SetRender(renderNameBox.Text, new HeightRender(rd.RenderWidth, rd.RenderHeight, rd.RenderClamp, rd.RenderClampMin, rd.RenderClampMax, rd.RenderWrapX, rd.RenderWrapY)))
-						{
-							Document.SelectedRenderName = renderNameBox.Text;
-							Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
-							renderArea.Invalidate();
-						}
-				}
-				else Document.SelectedRenderName = renderNameBox.Text;
+				newRenderToolStripMenuItem_Click(sender, e);
 				e.SuppressKeyPress = true;
 			}
 		}
-		private void renderNameBox_SelectedIndexChanged(object sender, EventArgs e)
+		private void newRenderToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			Document.SelectedRenderName = renderNameBox.Text;
+			if (!Document.ContainsRender(renderNameBox.Text))
+			{
+				if (Document.SetRender(renderNameBox.Text, null))
+				{
+					RenderDialog rd = new RenderDialog(renderNameBox.Text, this);
+					if (rd.ShowDialog() == DialogResult.OK)
+					{
+						Document.SetRender(renderNameBox.Text, new HeightRender(rd.RenderWidth, rd.RenderHeight, rd.RenderClamp, rd.RenderClampMin, rd.RenderClampMax, rd.RenderWrapX, rd.RenderWrapY));
+						Document.SelectedRenderName = renderNameBox.Text;
+					}
+					else Document.RemoveRender(renderNameBox.Text);
+				}
+				else MessageBox.Show("Please enter a valid name for your render in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("A render named {0} already exists. Type a new name in the box above, or remove the existing render.", renderNameBox.Text), "Naming Conflict");
 		}
 		private void editRenderToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedRender != null)
+			if (Document.ContainsRender(renderNameBox.Text))
 			{
-				RenderDialog rd = new RenderDialog(Document.SelectedRenderName);
+				RenderDialog rd = new RenderDialog(renderNameBox.Text, this);
 				rd.Show();
 			}
 		}
 		private void clearRenderToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedRender != null && MessageBox.Show("Are you sure you want to clear " + Document.SelectedRenderName + "?", "Clear Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
+			if (Document.SelectedRender != null && MessageBox.Show(string.Format("Are you sure you want to clear {0}? You cannot undo this action.", Document.SelectedRenderName), "Clear Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
 			{
 				Document.SelectedRender.Clear();
 				Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
 				renderArea.Invalidate();
+				undoQueue.Clear();
+				redoQueue.Clear();
 			}
 		}
 		private void exportRenderToolStripMenuItem_Click(object sender, EventArgs e)
@@ -322,72 +428,87 @@ namespace Fountain.Forms
 		}
 		private void removeRenderToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedRender != null && MessageBox.Show("Are you sure you want to remove " + Document.SelectedRenderName + "?", "Remove Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
-				Document.RemoveRender(Document.SelectedRenderName);
+			if (Document.ContainsRender(renderNameBox.Text) != null && MessageBox.Show("Are you sure you want to remove " + renderNameBox.Text + "?", "Remove Render", MessageBoxButtons.YesNo) == DialogResult.Yes)
+				Document.RemoveRender(renderNameBox.Text);
+		}
+		private void selectedRenderBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			Document.SelectedRenderName = selectedRenderBox.Text;
+			Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
+			renderArea.Invalidate();
 		}
 		//Gradients
 		private void gradientNameBox_KeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsGradient(gradientNameBox.Text))
-				{
-					PhotonGradient pg = new PhotonGradient(PhotonInterpolationMode.Linear);
-					pg.Add(new Photon(0, 0, 0), 0);
-					pg.Add(new Photon(1, 1, 1), 1);
-					GradientDialog gd = new GradientDialog(pg);
-					if (gd.ShowDialog() == DialogResult.OK)
-						if (Document.SetGradient(gradientNameBox.Text, pg))
-							Document.SelectedGradientName = gradientNameBox.Text;
-				}
-				else Document.SelectedGradientName = gradientNameBox.Text;
+				newGradientToolStripMenuItem_Click(sender, e);
 				e.SuppressKeyPress = true;
 			}
 		}
-		private void gradientNameBox_SelectedIndexChanged(object sender, EventArgs e)
+		private void newGradientToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			Document.SelectedGradientName = gradientNameBox.Text;
+			if (!Document.ContainsGradient(gradientNameBox.Text))
+			{
+				if (gradientNameBox.Text != null && gradientNameBox.Text.Length > 0)
+				{
+					GradientDialog gd = new GradientDialog(gradientNameBox.Text, this);
+					if (gd.ShowDialog() != DialogResult.OK) Document.RemoveGradient(gradientNameBox.Text);
+				}
+				else MessageBox.Show("Please enter a valid name for your gradient in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("A gradient named {0} already exists. Type a new name in the box above, or remove the existing gradient.", gradientNameBox.Text), "Naming Conflict");
 		}
 		private void editGradientToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.SelectedGradient != null)
+			if (Document.ContainsGradient(gradientNameBox.Text))
 			{
-				GradientDialog gd = new GradientDialog(Document.SelectedGradient.MakeCopy());
-				if (gd.ShowDialog() == DialogResult.OK)
-				{
-					Document.SetGradient(Document.SelectedGradientName, gd.Gradient);
-				}
+				PhotonGradient copy = Document.GetGradient(gradientNameBox.Text).MakeCopy();
+				GradientDialog gd = new GradientDialog(gradientNameBox.Text, this);
+				gd.Show();
 			}
 		}
 		private void removeGradientToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			Document.RemoveGradient(Document.SelectedGradientName);
+			Document.RemoveGradient(gradientNameBox.Text);
+		}
+		private void selectedGradientBox_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			Document.SelectedGradientName = selectedGradientBox.Text;
 		}
 		//Effects
 		private void effectNameBox_KeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsEffect(effectNameBox.Text))
-					if (Document.SetEffect(effectNameBox.Text, null))
-					{
-						EffectDialog ed = new EffectDialog(effectNameBox.Text);
-						ed.Show();
-					}
+				newEffectToolStripMenuItem_Click(sender, e);
 				e.SuppressKeyPress = true;
 			}
+		}
+		private void newEffectToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsEffect(effectNameBox.Text))
+			{
+				if (Document.SetEffect(effectNameBox.Text, null))
+				{
+					EffectDialog ed = new EffectDialog(effectNameBox.Text, this);
+					ed.Show();
+				}
+				else MessageBox.Show("Please enter a valid name for your effect in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("An effect named {0} already exists. Type a new name in the box above, or remove the existing effect.", effectNameBox.Text), "Naming Conflict");
 		}
 		private void editEffectToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			if (Document.ContainsEffect(effectNameBox.Text))
 			{
-				EffectDialog ed = new EffectDialog(effectNameBox.Text);
+				EffectDialog ed = new EffectDialog(effectNameBox.Text, this);
 				ed.Show();
 			}
 		}
 		private void removeEffectToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (Document.ContainsBrush(effectNameBox.Text) && MessageBox.Show("Are you sure you want to remove " + effectNameBox.Text + "?", "Remove Effect", MessageBoxButtons.YesNo) == DialogResult.Yes)
+			if (Document.ContainsEffect(effectNameBox.Text) && MessageBox.Show("Are you sure you want to remove " + effectNameBox.Text + "?", "Remove Effect", MessageBoxButtons.YesNo) == DialogResult.Yes)
 				Document.RemoveEffect(effectNameBox.Text);
 		}
 		private void addEffectToolStripMenuItem_Click(object sender, EventArgs e)
@@ -403,20 +524,28 @@ namespace Fountain.Forms
 		{
 			if (e.KeyCode == Keys.Return)
 			{
-				if (!Document.ContainsBrush(brushNameBox.Text))
-					if (Document.SetBrush(brushNameBox.Text, new HeightBrush(64, 64, 1, 8)))
-					{
-						BrushDialog bd = new BrushDialog(brushNameBox.Text);
-						bd.Show();
-					}
+				newBrushToolStripMenuItem_Click(sender, e);
 				e.SuppressKeyPress = true;
 			}
+		}
+		private void newBrushToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsBrush(brushNameBox.Text))
+			{
+				if (Document.SetBrush(brushNameBox.Text, new HeightBrush(64, 64, 1, 8)))
+				{
+					BrushDialog bd = new BrushDialog(brushNameBox.Text, this);
+					bd.Show();
+				}
+				else MessageBox.Show("Please enter a valid name for your brush in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("A brush named {0} already exists. Type a new name in the box above, or remove the existing brush.", brushNameBox.Text), "Naming Conflict");
 		}
 		private void editBrushToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			if (Document.ContainsBrush(brushNameBox.Text))
 			{
-				BrushDialog bd = new BrushDialog(brushNameBox.Text);
+				BrushDialog bd = new BrushDialog(brushNameBox.Text, this);
 				bd.Show();
 			}
 		}
@@ -432,6 +561,293 @@ namespace Fountain.Forms
 		private void rightBrushNameBox_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			Document.RightBrushName = rightBrushNameBox.Text;
+		}
+		//Generators
+		private void generatorNameBox_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Return)
+			{
+				newGeneratorToolStripMenuItem_Click(sender, e);
+				e.SuppressKeyPress = true;
+			}
+		}
+		private void newGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (!Document.ContainsGenerator(generatorNameBox.Text))
+			{
+				if (Document.SetGenerator(generatorNameBox.Text, null))
+				{
+					GeneratorDialog gd = new GeneratorDialog(generatorNameBox.Text, this);
+					gd.Show();
+				}
+				else MessageBox.Show("Please enter a valid name for your generator in the box above.", "Naming Error");
+			}
+			else MessageBox.Show(string.Format("A generator named {0} already exists. Type a new name in the box above, or remove the existing generator.", generatorNameBox.Text), "Naming Conflict");
+		}
+		private void editGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (Document.ContainsGenerator(generatorNameBox.Text))
+			{
+				GeneratorDialog gd = new GeneratorDialog(generatorNameBox.Text, this);
+				gd.Show();
+			}
+		}
+		private void removeGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (Document.ContainsGenerator(generatorNameBox.Text) && MessageBox.Show("Are you sure you want to remove " + generatorNameBox.Text + "?", "Remove Generator", MessageBoxButtons.YesNo) == DialogResult.Yes)
+				Document.RemoveGenerator(generatorNameBox.Text);
+		}
+		private void applyGeneratorToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			if (Document.SelectedRender != null && Document.ContainsGenerator(generatorNameBox.Text))
+			{
+				HeightRender.Generator generator = Document.GetGenerator(generatorNameBox.Text);
+				if (generator != null && MessageBox.Show("Applying a generator will modify or replace the current height map. This action cannot be undone.\n\nWould you like to continue?", "Apply Generator", MessageBoxButtons.YesNo) == DialogResult.Yes)
+				{
+					lock (undoQueue) undoQueue.Clear();
+					lock (redoQueue) redoQueue.Clear();
+					HeightField field = Document.SelectedRender.HeightField;
+					lock (field)
+					{
+						try
+						{
+							for (int u = 0; u < field.Width; u++)
+							{
+								for (int v = 0; v < field.Height; v++)
+								{
+									field[u, v] = (float)generator(u, v, field);
+								}
+							}
+						}
+						catch (Exception ex)
+						{
+							MessageBox.Show(ex.Message, "There was a runtime error with your generator script.");
+						}
+						finally
+						{
+							UpdateRender();
+						}
+					}
+				}
+			}
+		}
+
+		private void Undo()
+		{
+			if (undoQueue.Count > 0)
+			{
+				BrushAction undoAction = undoQueue.Dequeue();
+				//Set all of the values in the affected area to what they were before the brush action took place.
+				HeightRender render = Document.SelectedRender;
+				BrushAction opposite = new BrushAction(undoAction.Selection, undoAction.Data);
+				for (int x = undoAction.Selection.Left; x < undoAction.Selection.Right; x++)
+				{
+					for (int y = undoAction.Selection.Top; y < undoAction.Selection.Bottom; y++)
+					{
+						float oldSample;
+						if (render.HeightField.TryGetHeight(x, y, out oldSample))
+						{
+							int i = (y - undoAction.Selection.Top) * undoAction.Selection.Width + (x - undoAction.Selection.Left);
+							render.HeightField[x, y] = undoAction.Data[i];
+							opposite.Data[i] = oldSample;
+						}
+					}
+				}
+				PhotonGradient gradient = Document.SelectedGradient;
+				IEnumerable<HeightRender.Effect> effects;
+				if (paintEffectsBox.Checked) effects = Document.SelectedEffects;
+				else effects = null;//Don't worry about effects if we're not painting with them.
+				//Update each section of the selection when wrapping has been accounted for.
+				foreach (FieldSelection fs in undoAction.Selection.SubSelectionsOf(render.HeightField))
+				{
+					//Omit any parts that have a width or height of zero.
+					if (!fs.IsEmpty)
+					{
+						//Update the corresponding part of the render.
+						render.UpdateArea(fs.Left, fs.Top, fs.Width, fs.Height, gradient, effects);
+						//Invalidate the corresponding part of the image panel so that it redraws itself in realtime.
+						Point start = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Left, fs.Top)));
+						Point end = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Right, fs.Bottom)));
+						renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
+					}
+				}
+				redoQueue.Enqueue(opposite);
+			}
+		}
+		private void Redo()
+		{
+			if (redoQueue.Count > 0)
+			{
+				BrushAction redoAction = redoQueue.Dequeue();
+				//Set all of the values in the affected area to what they were before the undo action took place.
+				HeightRender render = Document.SelectedRender;
+				BrushAction opposite = new BrushAction(redoAction.Selection, redoAction.Data);
+				for (int x = redoAction.Selection.Left; x < redoAction.Selection.Right; x++)
+				{
+					for (int y = redoAction.Selection.Top; y < redoAction.Selection.Bottom; y++)
+					{
+						float oldSample;
+						if (render.HeightField.TryGetHeight(x, y, out oldSample))
+						{
+							int i = (y - redoAction.Selection.Top) * redoAction.Selection.Width + (x - redoAction.Selection.Left);
+							render.HeightField[x, y] = redoAction.Data[i];
+							opposite.Data[i] = oldSample;
+						}
+					}
+				}
+				PhotonGradient gradient = Document.SelectedGradient;
+				IEnumerable<HeightRender.Effect> effects;
+				if (paintEffectsBox.Checked) effects = Document.SelectedEffects;
+				else effects = null;//Don't worry about effects if we're not painting with them.
+				//Update each section of the selection when wrapping has been accounted for.
+				foreach (FieldSelection fs in redoAction.Selection.SubSelectionsOf(render.HeightField))
+				{
+					//Omit any parts that have a width or height of zero.
+					if (!fs.IsEmpty)
+					{
+						//Update the corresponding part of the render.
+						render.UpdateArea(fs.Left, fs.Top, fs.Width, fs.Height, gradient, effects);
+						//Invalidate the corresponding part of the image panel so that it redraws itself in realtime.
+						Point start = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Left, fs.Top)));
+						Point end = Numerics.ToPoint(renderArea.ImageToClient(new Vector2(fs.Right, fs.Bottom)));
+						renderArea.Invalidate(new Rectangle(Numerics.Max(start.X, 0), Numerics.Max(start.Y, 0), Numerics.Max(end.X, 0), Numerics.Max(end.Y, 0)));
+					}
+				}
+				undoQueue.Enqueue(opposite);
+			}
+		}
+		private void UpdateRender()
+		{
+			if (Document.SelectedRender != null)
+			{
+				try
+				{
+					Document.SelectedRender.UpdateAll(Document.SelectedGradient, Document.SelectedEffects);
+				}
+				catch (Exception e)
+				{
+					//This usually happens when Apply is called, because it executes the user's effect script. Shows the script error message as a message box.
+					MessageBox.Show(e.Message, "There was a runtime error with one of your effect scripts.");
+				}
+				finally
+				{
+					renderArea.Invalidate();
+				}
+			}
+		}
+
+		private static void HandleFileLoad(string path)
+		{
+			if (path != null)
+			{
+				switch (Document.Load(path))
+				{
+					case Document.IOEvaluation.CannotOpenStream:
+						MessageBox.Show(string.Format("The file at {0} could not be loaded. This was likely caused by a permissions issue - try running Fountain as Administrator.", path), "Cannot Open Stream");
+						break;
+					case Document.IOEvaluation.ConversionError:
+						MessageBox.Show(string.Format("The file at {0} could not be loaded. The file may be corrupt, or the file standard may have changed.", path), "File Parsing Error");
+						break;
+					case Document.IOEvaluation.FileDoesNotExist:
+						MessageBox.Show(string.Format("There was no file located at {0}.", path), "File Does Not Exist");
+						break;
+				}
+			}
+			else MessageBox.Show("The supplied path was null.", "File Path Null");
+		}
+		private static void HandleFileSave(string path)
+		{
+			if (path != null)
+			{
+				switch (Document.Save(path))
+				{
+					case Document.IOEvaluation.CannotOpenStream:
+						MessageBox.Show(string.Format("The file could not be saved to {0}. This was likely caused by a permissions issue - try running Fountain as Administrator.", path), "Cannot Open Stream");
+						break;
+					case Document.IOEvaluation.ConversionError:
+						MessageBox.Show(string.Format("The file could not be saved to {0}. The document may be corrupt.", path), "Document Conversion Error");
+						break;
+				}
+			}
+			else MessageBox.Show("The supplied path was null.", "File Path Null");
+		}
+
+		private class BrushAction
+		{
+			private FieldSelection selection;
+			public FieldSelection Selection
+			{
+				get
+				{
+					return selection;
+				}
+			}
+			private float[] data;
+			public float[] Data
+			{
+				get
+				{
+					return data;
+				}
+			}
+
+			public BrushAction(FieldSelection selection, float[] data)
+			{
+				this.selection = selection;
+				this.data = data;
+			}
+		}
+		private class ActionQueue
+		{
+			private uint capacity;
+			public uint Capacity
+			{
+				get
+				{
+					return capacity;
+				}
+				set
+				{
+					capacity = value;
+					Trim();
+				}
+			}
+			private LinkedList<BrushAction> list = new LinkedList<BrushAction>();
+			public int Count
+			{
+				get
+				{
+					return list.Count;
+				}
+			}
+
+			public ActionQueue(uint capacity)
+			{
+				this.capacity = capacity;
+			}
+
+			private void Trim()
+			{
+				if (Count > capacity)
+					for (uint i = capacity; i < Count; i++)
+						list.RemoveFirst();
+			}
+
+			public void Enqueue(BrushAction action)
+			{
+				list.AddLast(action);
+				Trim();
+			}
+			public BrushAction Dequeue()
+			{
+				BrushAction ba = list.Last.Value;
+				list.RemoveLast();
+				return ba;
+			}
+			public void Clear()
+			{
+				list.Clear();
+			}
 		}
 	}
 }

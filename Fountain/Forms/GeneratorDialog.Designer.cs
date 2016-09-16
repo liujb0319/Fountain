@@ -1,6 +1,6 @@
 ﻿namespace Fountain.Forms
 {
-	partial class EffectDialog
+	partial class GeneratorDialog
 	{
 		/// <summary>
 		/// Required designer variable.
@@ -72,7 +72,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Name = "EffectDialog";
-			this.Text = "Effect";
+			this.Text = "Generator";
 			this.ResumeLayout(false);
 			this.PerformLayout();
 

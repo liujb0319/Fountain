@@ -39,11 +39,19 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.okButton = new System.Windows.Forms.Button();
 			this.cancelButton = new System.Windows.Forms.Button();
+			this.redBox = new System.Windows.Forms.NumericUpDown();
+			this.greenBox = new System.Windows.Forms.NumericUpDown();
+			this.blueBox = new System.Windows.Forms.NumericUpDown();
+			this.alphaBox = new System.Windows.Forms.NumericUpDown();
 			this.colorPanel = new Fountain.Controls.PhotonPanel();
 			((System.ComponentModel.ISupportInitialize)(this.redBar)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.greenBar)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.blueBar)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.alphaBar)).BeginInit();
+			((System.ComponentModel.ISupportInitialize)(this.redBox)).BeginInit();
+			((System.ComponentModel.ISupportInitialize)(this.greenBox)).BeginInit();
+			((System.ComponentModel.ISupportInitialize)(this.blueBox)).BeginInit();
+			((System.ComponentModel.ISupportInitialize)(this.alphaBox)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// redBar
@@ -60,7 +68,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(13, 19);
+			this.label1.Location = new System.Drawing.Point(13, 12);
 			this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(31, 13);
@@ -92,7 +100,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(13, 121);
+			this.label2.Location = new System.Drawing.Point(13, 114);
 			this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(39, 13);
@@ -102,7 +110,7 @@
 			// label3
 			// 
 			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(13, 70);
+			this.label3.Location = new System.Drawing.Point(13, 63);
 			this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
 			this.label3.Name = "label3";
 			this.label3.Size = new System.Drawing.Size(47, 13);
@@ -123,7 +131,7 @@
 			// label4
 			// 
 			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(13, 172);
+			this.label4.Location = new System.Drawing.Point(13, 165);
 			this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
 			this.label4.Name = "label4";
 			this.label4.Size = new System.Drawing.Size(47, 13);
@@ -154,6 +162,66 @@
 			this.cancelButton.UseVisualStyleBackColor = true;
 			this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
 			// 
+			// redBox
+			// 
+			this.redBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.redBox.Location = new System.Drawing.Point(12, 28);
+			this.redBox.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+			this.redBox.Name = "redBox";
+			this.redBox.Size = new System.Drawing.Size(53, 20);
+			this.redBox.TabIndex = 11;
+			this.redBox.ValueChanged += new System.EventHandler(this.redBox_ValueChanged);
+			this.redBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.redBox_KeyDown);
+			// 
+			// greenBox
+			// 
+			this.greenBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.greenBox.Location = new System.Drawing.Point(12, 79);
+			this.greenBox.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+			this.greenBox.Name = "greenBox";
+			this.greenBox.Size = new System.Drawing.Size(53, 20);
+			this.greenBox.TabIndex = 12;
+			this.greenBox.ValueChanged += new System.EventHandler(this.greenBox_ValueChanged);
+			this.greenBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.greenBox_KeyDown);
+			// 
+			// blueBox
+			// 
+			this.blueBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.blueBox.Location = new System.Drawing.Point(12, 130);
+			this.blueBox.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+			this.blueBox.Name = "blueBox";
+			this.blueBox.Size = new System.Drawing.Size(53, 20);
+			this.blueBox.TabIndex = 13;
+			this.blueBox.ValueChanged += new System.EventHandler(this.blueBox_ValueChanged);
+			this.blueBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.blueBox_KeyDown);
+			// 
+			// alphaBox
+			// 
+			this.alphaBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.alphaBox.Location = new System.Drawing.Point(12, 181);
+			this.alphaBox.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+			this.alphaBox.Name = "alphaBox";
+			this.alphaBox.Size = new System.Drawing.Size(53, 20);
+			this.alphaBox.TabIndex = 14;
+			this.alphaBox.ValueChanged += new System.EventHandler(this.alphaBox_ValueChanged);
+			this.alphaBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.alphaBox_KeyDown);
+			// 
 			// colorPanel
 			// 
 			this.colorPanel.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("colorPanel.BackgroundImage")));
@@ -168,6 +236,11 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(647, 214);
+			this.ControlBox = false;
+			this.Controls.Add(this.alphaBox);
+			this.Controls.Add(this.blueBox);
+			this.Controls.Add(this.greenBox);
+			this.Controls.Add(this.redBox);
 			this.Controls.Add(this.colorPanel);
 			this.Controls.Add(this.cancelButton);
 			this.Controls.Add(this.okButton);
@@ -190,6 +263,10 @@
 			((System.ComponentModel.ISupportInitialize)(this.greenBar)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.blueBar)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.alphaBar)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.redBox)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.greenBox)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.blueBox)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.alphaBox)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -208,5 +285,9 @@
 		private System.Windows.Forms.Button okButton;
 		private System.Windows.Forms.Button cancelButton;
 		private Controls.PhotonPanel colorPanel;
+		private System.Windows.Forms.NumericUpDown redBox;
+		private System.Windows.Forms.NumericUpDown greenBox;
+		private System.Windows.Forms.NumericUpDown blueBox;
+		private System.Windows.Forms.NumericUpDown alphaBox;
 	}
 }

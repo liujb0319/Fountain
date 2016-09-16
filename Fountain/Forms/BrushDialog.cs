@@ -26,8 +26,6 @@ using System.Windows.Forms;
 using System.Reflection;
 
 using LlewellynScripting;
-using LlewellynMath;
-using LlewellynMath.NoiseGenerators;
 using LlewellynMedia;
 
 using Fountain.Media;
@@ -40,14 +38,24 @@ namespace Fountain.Forms
 		private HeightBrush brush;
 		private CSScript script;
 
-		public BrushDialog(string brushName)
+		public BrushDialog(string brushName, Form owner)
 		{
-			CenterToParent();
-			InitializeComponent();
-			if (Document.ContainsBrush(this.brushName = brushName))
+			Owner = owner;
+			if (brushName != null && brushName.Length > 0)
 			{
-				brush = Document.GetBrush(brushName);
-				script = Document.GetBrushScript(brushName);
+				CenterToParent();
+				InitializeComponent();
+
+				if (Document.ContainsBrush(this.brushName = brushName))
+				{
+					brush = Document.GetBrush(brushName);
+					script = Document.GetBrushScript(brushName);
+				}
+				else
+				{
+					Document.SetBrush(brushName, brush = new HeightBrush(64, 64, 1.0f, 8));
+					script = Document.GetBrushScript(brushName);
+				}
 
 				Text = "Brush - " + brushName;
 				widthBox.Value = brush.Width;
@@ -60,7 +68,7 @@ namespace Fountain.Forms
 				Document.Loaded += FountainDocument_Loaded;
 				Document.Cleared += FountainDocument_Cleared;
 			}
-			else throw new Exception("The given brush name does not correspond to any brush in the current document.");
+			else throw new Exception("The supplied name was empty or null.");
 		}
 
 		private void FountainDocument_Cleared()
@@ -94,45 +102,32 @@ namespace Fountain.Forms
 		}
 		private void compileButton_Click(object sender, EventArgs e)
 		{
-			script.RequiredTypes.Add(typeof(Math));
-			script.RequiredTypes.Add(typeof(Numerics));
-			script.RequiredTypes.Add(typeof(PerlinNoise));
 			script.Source = scriptBox.Text;
-
+			HeightBrush.SampleFunction sample;
+			HeightBrush.BlendFunction blend;
 			string errors;
-			if (script.Compile(out errors))
+			switch (HeightBrush.CompileFunctions(script, out sample, out blend, out errors))
 			{
-				MethodInfo sampleInfo;
-				if (script.TryGetMember<MethodInfo>("Sample", out sampleInfo))
-				{
-					try
-					{
-						HeightBrush.SampleFunction sample = (HeightBrush.SampleFunction)sampleInfo.CreateDelegate(typeof(HeightBrush.SampleFunction), script.ScriptObject);
-						brush.Sample = sample;
-					}
-					catch
-					{
-						MessageBox.Show("The method signature for the \"Sample\" function should be:\n\nfloat Sample(int x, int y, float intensity, int left, int right, int top int bottom)", "Script Error");
-					}
-				}
-				else MessageBox.Show("The \"Sample\" function is missing from your script.");
-
-				MethodInfo blendInfo;
-				if (script.TryGetMember<MethodInfo>("Blend", out blendInfo))
-				{
-					try
-					{
-						HeightBrush.BlendFunction blend = (HeightBrush.BlendFunction)blendInfo.CreateDelegate(typeof(HeightBrush.BlendFunction), script.ScriptObject);
-						brush.Blend = blend;
-					}
-					catch
-					{
-						MessageBox.Show("The method signature for the \"Blend\" function should be:\n\nfloat Blend(float baseValue, float newValue)", "Script Error");
-					}
-				}
-				else MessageBox.Show("The \"Blend\" function is missing from your script.");
+				case HeightBrush.CompileResult.WrongSampleSignature:
+					MessageBox.Show("The method signature for the \"Sample\" function should be:\n\nfloat Sample(int x, int y, float intensity, int left, int right, int top int bottom)", "Script Error");
+					break;
+				case HeightBrush.CompileResult.MissingSampleFunction:
+					MessageBox.Show("The \"Sample\" function is missing from your script.");
+					break;
+				case HeightBrush.CompileResult.WrongBlendSignature:
+					MessageBox.Show("The method signature for the \"Blend\" function should be:\n\nfloat Blend(float baseValue, float newValue)", "Script Error");
+					break;
+				case HeightBrush.CompileResult.MissingBlendFunction:
+					MessageBox.Show("The \"Blend\" function is missing from your script.");
+					break;
+				case HeightBrush.CompileResult.SyntaxError:
+					MessageBox.Show("There was a compilation error in your script:\r\n" + errors, "Syntax Error");
+					break;
+				case HeightBrush.CompileResult.Success:
+					brush.Sample = sample;
+					brush.Blend = blend;
+					break;
 			}
-			else MessageBox.Show("There was a compilation error in your script:\n\n" + errors.Split('\n')[0], "Script Error");
 		}
 		private void scriptBox_KeyDown(object sender, KeyEventArgs e)
 		{

@@ -32,41 +32,41 @@ using Fountain.Media;
 
 namespace Fountain.Forms
 {
-	public partial class EffectDialog : Form
+	public partial class GeneratorDialog : Form
 	{
-		private string effectName;
+		private string generatorName;
 		private CSScript script;
 
-		public EffectDialog(string effectName, Form owner)
+		public GeneratorDialog(string generatorName, Form owner)
 		{
 			Owner = owner;
-			if (effectName != null && effectName.Length > 0)
+			if (generatorName != null && generatorName.Length > 0)
 			{
 				InitializeComponent();
 
-				if (Document.ContainsEffect(this.effectName = effectName))
+				if (Document.ContainsGenerator(this.generatorName = generatorName))
 				{
-					script = Document.GetEffectScript(effectName);
+					script = Document.GetGeneratorScript(generatorName);
 				}
 				else
 				{
-					Document.SetEffect(effectName, null);
-					script = Document.GetEffectScript(effectName);
+					Document.SetGenerator(generatorName, null);
+					script = Document.GetGeneratorScript(generatorName);
 				}
 
-				Text = "Effect - " + effectName;
+				Text = "Generator - " + generatorName;
 				scriptBox.Text = script.Source;
 
 				Document.Cleared += Document_Cleared;
 				Document.Loaded += Document_Loaded;
-				Document.EffectRemoved += Document_EffectRemoved;
+				Document.GeneratorRemoved += Document_GeneratorRemoved;
 			}
 			else throw new Exception("The supplied name was empty or null.");
 		}
 
-		private void Document_EffectRemoved(string name, Media.HeightRender.Effect effect)
+		private void Document_GeneratorRemoved(string name, HeightRender.Generator generator)
 		{
-			if (name == effectName) Close();
+			if (name == generatorName) Close();
 		}
 		private void Document_Loaded(string path)
 		{
@@ -80,21 +80,21 @@ namespace Fountain.Forms
 		private void compileButton_Click(object sender, EventArgs e)
 		{
 			script.Source = scriptBox.Text;
-			HeightRender.Effect effect;
+			HeightRender.Generator generator;
 			string errors;
-			switch (HeightRender.CompileEffect(script, out effect, out errors))
+			switch (HeightRender.CompileGenerator(script, out generator, out errors))
 			{
-				case HeightRender.EffectCompileResult.WrongApplySignature:
-					MessageBox.Show("The method signature for the \"Apply\" function should be:\n\nPhoton Apply(int x, int y, Photon color, HeightField heightField)", "Script Error");
+				case HeightRender.GeneratorCompileResult.WrongGenerateSignature:
+					MessageBox.Show("The method signature for the \"Generate\" function should be:\n\nfloat Generate(int x, int y, HeightField heightField)", "Script Error");
 					break;
-				case HeightRender.EffectCompileResult.MissingApplyFunction:
-					MessageBox.Show("The \"Apply\" function is missing from your script.", "Script Error");
+				case HeightRender.GeneratorCompileResult.MissingGenerateFunction:
+					MessageBox.Show("The \"Generate\" function is missing from your script.", "Script Error");
 					break;
-				case HeightRender.EffectCompileResult.SyntaxError:
+				case HeightRender.GeneratorCompileResult.SyntaxError:
 					MessageBox.Show("There was a compilation error in your script:\r\n" + errors, "Script Error");
 					break;
-				case HeightRender.EffectCompileResult.Success:
-					Document.SetEffect(effectName, effect, script);
+				case HeightRender.GeneratorCompileResult.Success:
+					Document.SetGenerator(generatorName, generator, script);
 					break;
 			}
 		}
