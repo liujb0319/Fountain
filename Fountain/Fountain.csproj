@@ -219,11 +219,18 @@
     <None Include="UnmanagedPackages\LlewellynMedia.pdb" />
     <None Include="UnmanagedPackages\LlewellynScripting.dll" />
     <None Include="UnmanagedPackages\LlewellynScripting.pdb" />
+    <None Include="Resources\Tutorial Samples.fdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="fountain.ico" />
-    <Content Include="Resources\fountain.ico" />
-    <None Include="Resources\tile.png" />
+    <Content Include="Resources\fountain.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="Resources\tile.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
