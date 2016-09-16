@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<SerializableHeightBrush xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>SoftCircular</Name>
+  <Width>64</Width>
+  <Height>64</Height>
+  <Power>1</Power>
+  <Precision>8</Precision>
+  <Script>double Sample(int x, int y, double intensity, int left, int right, int top, int bottom)
+{
+    double u = (double)(x - left) / (right - left) * 2.0 - 1.0;
+    double v = (double)(y - top) / (bottom - top) * 2.0 - 1.0;
+    double d = 1.0 - Math.Sqrt(u * u + v * v);
+    if (d &lt; 0)
+        d = 0;
+    return d * intensity;
+}
+double Blend(double baseValue, double newValue)
+{
+    return baseValue + newValue;
+}</Script>
+</SerializableHeightBrush>

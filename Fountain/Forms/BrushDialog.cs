@@ -15,28 +15,19 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 using System.Windows.Forms;
-using System.Reflection;
-
-using LlewellynScripting;
-using LlewellynMedia;
-
+using System.Xml.Serialization;
 using Fountain.Media;
+using LlewellynScripting;
 
 namespace Fountain.Forms
 {
 	public partial class BrushDialog : Form
 	{
-		private string brushName;
-		private HeightBrush brush;
-		private CSScript script;
+		private readonly string brushName;
+		private readonly HeightBrush brush;
+		private readonly CSScript script;
 
 		public BrushDialog(string brushName, Form owner)
 		{
@@ -60,7 +51,7 @@ namespace Fountain.Forms
 				Text = "Brush - " + brushName;
 				widthBox.Value = brush.Width;
 				heightBox.Value = brush.Height;
-				powerBox.Value = (decimal)brush.Power;
+				powerBox.Value = (decimal) brush.Power;
 				precisionBox.Value = brush.Precision;
 				scriptBox.Text = script.Source;
 
@@ -75,10 +66,12 @@ namespace Fountain.Forms
 		{
 			Close();
 		}
+
 		private void FountainDocument_Loaded(string path)
 		{
 			Close();
 		}
+
 		private void FountainDocument_BrushRemoved(string name, HeightBrush brush)
 		{
 			if (name == brushName) Close();
@@ -86,20 +79,24 @@ namespace Fountain.Forms
 
 		private void widthBox_ValueChanged(object sender, EventArgs e)
 		{
-			brush.Width = (int)widthBox.Value;
+			brush.Width = (int) widthBox.Value;
 		}
+
 		private void heightBox_ValueChanged(object sender, EventArgs e)
 		{
-			brush.Height = (int)heightBox.Value;
+			brush.Height = (int) heightBox.Value;
 		}
+
 		private void powerBox_ValueChanged(object sender, EventArgs e)
 		{
-			brush.Power = (float)powerBox.Value;
+			brush.Power = (float) powerBox.Value;
 		}
+
 		private void precisionBox_ValueChanged(object sender, EventArgs e)
 		{
-			brush.Precision = (int)precisionBox.Value;
+			brush.Precision = (int) precisionBox.Value;
 		}
+
 		private void compileButton_Click(object sender, EventArgs e)
 		{
 			script.Source = scriptBox.Text;
@@ -109,13 +106,17 @@ namespace Fountain.Forms
 			switch (HeightBrush.CompileFunctions(script, out sample, out blend, out errors))
 			{
 				case HeightBrush.CompileResult.WrongSampleSignature:
-					MessageBox.Show("The method signature for the \"Sample\" function should be:\n\nfloat Sample(int x, int y, float intensity, int left, int right, int top int bottom)", "Script Error");
+					MessageBox.Show(
+						"The method signature for the \"Sample\" function should be:\n\nfloat Sample(int x, int y, float intensity, int left, int right, int top int bottom)",
+						"Script Error");
 					break;
 				case HeightBrush.CompileResult.MissingSampleFunction:
 					MessageBox.Show("The \"Sample\" function is missing from your script.");
 					break;
 				case HeightBrush.CompileResult.WrongBlendSignature:
-					MessageBox.Show("The method signature for the \"Blend\" function should be:\n\nfloat Blend(float baseValue, float newValue)", "Script Error");
+					MessageBox.Show(
+						"The method signature for the \"Blend\" function should be:\n\nfloat Blend(float baseValue, float newValue)",
+						"Script Error");
 					break;
 				case HeightBrush.CompileResult.MissingBlendFunction:
 					MessageBox.Show("The \"Blend\" function is missing from your script.");
@@ -124,11 +125,34 @@ namespace Fountain.Forms
 					MessageBox.Show("There was a compilation error in your script:\r\n" + errors, "Syntax Error");
 					break;
 				case HeightBrush.CompileResult.Success:
+					brush.Name = brushName;
 					brush.Sample = sample;
 					brush.Blend = blend;
+					if (MessageBox.Show(
+						"Brush compiled successfully.  Would you like to save it so you never have to do this again? (You can still use this brush without saving it).",
+						"Compile successful", MessageBoxButtons.YesNo) == DialogResult.Yes)
+						ExportBrush();
+					;
+					Close();
 					break;
 			}
 		}
+
+		private void ExportBrush()
+		{
+			var executingDirectory = Path.Combine(Environment.CurrentDirectory, $"{brush.Name}.xml");
+
+			var serializableHeightBrush = brush.ToSerializableHeightBrush(script.Source);
+
+			var writer =
+				new XmlSerializer(typeof(SerializableHeightBrush));
+
+			var file = File.Create(executingDirectory);
+
+			writer.Serialize(file, serializableHeightBrush);
+			file.Close();
+		}
+
 		private void scriptBox_KeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.Control && e.KeyCode == Keys.A)

@@ -15,98 +15,84 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing;
 using System.Reflection;
-
-using LlewellynScripting;
 using LlewellynMath;
 using LlewellynMath.NoiseGenerators;
-using LlewellynMath;
+using LlewellynScripting;
 
 namespace Fountain.Media
 {
+	[Serializable]
+	public class SerializableHeightBrush
+	{
+		public string Name;
+		public int Width;
+		public int Height;
+		public float Power;
+		public int Precision;
+		public string Script;
+	}
+
+	public static class HeightBrushExtensions
+	{
+		public static SerializableHeightBrush ToSerializableHeightBrush(this HeightBrush hb, string script)
+		{
+			return new SerializableHeightBrush
+			{
+				Name = hb.Name,
+				Width = hb.Width,
+				Height = hb.Height,
+				Power = hb.Power,
+				Precision = hb.Precision,
+				Script = script
+			};
+		}
+	}
+
 	public class HeightBrush
 	{
+		public string Name;
+
 		private int width;
+
 		public virtual int Width
 		{
-			get
-			{
-				return width;
-			}
+			get { return width; }
 			set
 			{
 				if (value >= 0) width = value;
 				else throw new Exception("The width of a brush stroke cannot be negative.");
 			}
 		}
+
 		private int height;
+
 		public virtual int Height
 		{
-			get
-			{
-				return height;
-			}
+			get { return height; }
 			set
 			{
 				if (value >= 0) height = value;
 				else throw new Exception("The height of a brush stroke cannot be negative.");
 			}
 		}
-		private float power;
-		public virtual float Power
-		{
-			get
-			{
-				return power;
-			}
-			set
-			{
-				power = value;
-			}
-		}
+
+		public virtual float Power { get; set; }
+
 		private int precision;
+
 		public int Precision
 		{
-			get
-			{
-				return precision;
-			}
-			set
-			{
-				precision = Numerics.Max(value, 1);
-			}
-		}
-		private SampleFunction sample;
-		public SampleFunction Sample
-		{
-			get
-			{
-				return sample;
-			}
-			set
-			{
-				sample = value;
-			}
-		}
-		private BlendFunction blend;
-		public BlendFunction Blend
-		{
-			get
-			{
-				return blend;
-			}
-			set
-			{
-				blend = value;
-			}
+			get { return precision; }
+			set { precision = Numerics.Max(value, 1); }
 		}
 
-		public HeightBrush(int width, int height, float power, int precision, SampleFunction sample = null, BlendFunction blend = null)
+		public SampleFunction Sample { get; set; }
+
+		public BlendFunction Blend { get; set; }
+
+		public HeightBrush(int width, int height, float power, int precision, SampleFunction sample = null,
+			BlendFunction blend = null)
 		{
 			Width = width;
 			Height = height;
@@ -116,29 +102,27 @@ namespace Fountain.Media
 			Blend = blend;
 		}
 
-		public void Paint(HeightField field, int x, int y, float intensity, out FieldSelection brushArea, out float[] previousData)
+		public void Paint(HeightField field, int x, int y, float intensity, out FieldSelection brushArea,
+			out float[] previousData)
 		{
-			brushArea = new FieldSelection(x - width / 2 - width % 2, y - height / 2 - height % 2, width, height);
-			previousData = new float[width * height];
-			if (sample != null && blend != null)
-			{
-				for (int _x = brushArea.Left; _x < brushArea.Right; _x++)
-				{
-					for (int _y = brushArea.Top; _y < brushArea.Bottom; _y++)
+			brushArea = new FieldSelection(x - width/2 - width%2, y - height/2 - height%2, width, height);
+			previousData = new float[width*height];
+			if (Sample != null && Blend != null)
+				for (var _x = brushArea.Left; _x < brushArea.Right; _x++)
+					for (var _y = brushArea.Top; _y < brushArea.Bottom; _y++)
 					{
 						float data;
 						if (field.TryGetHeight(_x, _y, out data))
 						{
-							previousData[(_y - brushArea.Top) * width + (_x - brushArea.Left)] = data;
-							double shape = sample(_x, _y, intensity * Power, brushArea.Left, brushArea.Right, brushArea.Top, brushArea.Bottom);
-							field[_x, _y] = (float)blend(data, shape);
+							previousData[(_y - brushArea.Top)*width + (_x - brushArea.Left)] = data;
+							var shape = Sample(_x, _y, intensity*Power, brushArea.Left, brushArea.Right, brushArea.Top, brushArea.Bottom);
+							field[_x, _y] = (float) Blend(data, shape);
 						}
 					}
-				}
-			}
 		}
 
-		public static CompileResult CompileFunctions(CSScript script, out SampleFunction sample, out BlendFunction blend, out string errors)
+		public static CompileResult CompileFunctions(CSScript script, out SampleFunction sample, out BlendFunction blend,
+			out string errors)
 		{
 			if (script != null)
 			{
@@ -150,11 +134,11 @@ namespace Fountain.Media
 				if (script.Compile(out errors))
 				{
 					MethodInfo sampleInfo;
-					if (script.TryGetMember<MethodInfo>("Sample", out sampleInfo))
+					if (script.TryGetMember("Sample", out sampleInfo))
 					{
 						try
 						{
-							sample = (HeightBrush.SampleFunction)sampleInfo.CreateDelegate(typeof(HeightBrush.SampleFunction), script.ScriptObject);
+							sample = (SampleFunction) sampleInfo.CreateDelegate(typeof(SampleFunction), script.ScriptObject);
 						}
 						catch
 						{
@@ -171,11 +155,11 @@ namespace Fountain.Media
 					}
 
 					MethodInfo blendInfo;
-					if (script.TryGetMember<MethodInfo>("Blend", out blendInfo))
+					if (script.TryGetMember("Blend", out blendInfo))
 					{
 						try
 						{
-							blend = (HeightBrush.BlendFunction)blendInfo.CreateDelegate(typeof(HeightBrush.BlendFunction), script.ScriptObject);
+							blend = (BlendFunction) blendInfo.CreateDelegate(typeof(BlendFunction), script.ScriptObject);
 						}
 						catch
 						{
@@ -192,19 +176,25 @@ namespace Fountain.Media
 					}
 					return CompileResult.Success;
 				}
-				else
-				{
-					sample = null;
-					blend = null;
-					return CompileResult.SyntaxError;
-				}
+				sample = null;
+				blend = null;
+				return CompileResult.SyntaxError;
 			}
-			else throw new Exception("The supplied script was null.");
+			throw new Exception("The supplied script was null.");
 		}
 
-		public enum CompileResult { Success, SyntaxError, MissingBlendFunction, MissingSampleFunction, WrongSampleSignature, WrongBlendSignature }
+		public enum CompileResult
+		{
+			Success,
+			SyntaxError,
+			MissingBlendFunction,
+			MissingSampleFunction,
+			WrongSampleSignature,
+			WrongBlendSignature
+		}
 
 		public delegate double SampleFunction(int x, int y, double intensity, int left, int right, int top, int bottom);
+
 		public delegate double BlendFunction(double baseValue, double newValue);
 	}
 }
