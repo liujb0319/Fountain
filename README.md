@@ -262,10 +262,10 @@ The Numerics class has a whole heap of helper functions for math-related use. Yo
 The Cartography class really only contains one useful function; but it's a good one.
 * UVToUnitSphere - Takes UV coordinates (image coordinates _u_ and _v_, each ranging from _0_ to _1_) and outputs physical coordinates on the surface of a sphere. Basically; if the image were wrapped around a sphere; this function would tell you where on the sphere different parts of the image would be. This might sound strange; but it means you can sample points around a globe using just image coordinates, so you can make a map that has realistic projection. See the _Generators_ section of this readme for example usage.
 
-### HeightRender
+### HeightField
 This class is the heart and soul of your renders; it holds all the information related to the topology of your map.
 
-The principal functions that you need to worry about are _TryGetValue_ and _TrySetValue_. The former function will attempt to get a height value from the field, while the latter will attempt to edit a value in the field. Both functions return a value of either _true_ or _false_ that denotes whether the location you supplied was within the bounds of the field (this includes wrapping, if wrapping is enabled).
+The principal functions that you need to worry about are _HeightField.TryGetValue_ and _HeightField.TrySetValue_. The former function will attempt to get a height value from the field, while the latter will attempt to edit a value in the field. Both functions return a value of either _true_ or _false_ that denotes whether the location you supplied was within the bounds of the field (this includes wrapping, if wrapping is enabled).
 
 You can use them like this...
 
@@ -281,7 +281,7 @@ else
 }
 ```
 
-or like this:
+and like this:
 
 ```
 if (heightField.TrySetValue(10, 8, 100.3f))
@@ -293,6 +293,10 @@ else
 	//Your location lay outside the field and nothing in the field was changed.
 }
 ```
+
+You can also use the _HeightField.Clamp_ (either _true_ or _false_) value to check whether the current render enforces clamping limits. If it does; the values of _HeightField.ClampMin_ and _HeightField.ClampMax_ will be the lower and upper limits for the height data respectively.
+
+Similarly; you can check for wrapping and the size of the field. _HeightField.WrapX_ and _HeightField.WrapY_ (both either _true_ or _false_) denote the wrapping behavior, while _HeightField.Width_ and _HeightField.Height_ denote the size of the field.
 
 ### Photon
 Photons are a simple little structures that denote colors. They contain a value each for _red_, _green_, _blue_ and _transparency_. They are predominantly used in effect scripting.
