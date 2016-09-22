@@ -76,10 +76,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="LlewellynMath">
       <HintPath>lib\LlewellynMath.dll</HintPath>
     </Reference>
@@ -89,6 +85,10 @@
     <Reference Include="LlewellynScripting">
       <HintPath>lib\LlewellynScripting.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controls\PhotonPanel.cs">
